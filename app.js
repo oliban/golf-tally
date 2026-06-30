@@ -446,9 +446,6 @@ function holeEntry(r) {
       () => { hole.si = Math.max(1, hole.si - 1); commitHoleMeta(); },
       () => { hole.si = Math.min(N, hole.si + 1); commitHoleMeta(); }),
   ]));
-  if (r.courseName) {
-    box.appendChild(h('div', { class: 'course-note' }, `Saving pars to "${r.courseName}"`));
-  }
 
   // One row per player
   r.players.forEach(p => {
