@@ -200,7 +200,7 @@ input:focus { outline: none; border-color: var(--green-light); }
 .stepper .val {
   width: 50px; text-align: center; font-size: 24px; font-weight: 750;
 }
-.stepper .val.empty { color: var(--line); }
+.stepper .val.blank { color: var(--line); }
 .pts-badge {
   flex: none; width: 46px; text-align: center;
 }

@@ -454,7 +454,7 @@ function holeEntry(r) {
     const sr = strokesReceived(p.handicap, hole.si, N);
     const pts = holePoints(g, hole.par, sr);
 
-    const valEl = h('div', { class: 'val' + (g == null ? ' empty' : '') }, g == null ? '–' : String(g));
+    const valEl = h('div', { class: 'val' + (g == null ? ' blank' : '') }, g == null ? '–' : String(g));
     const ptsEl = h('div', { class: 'p ' + (pts == null ? '' : pts === 0 ? 'zero' : 'good') }, pts == null ? '–' : String(pts));
 
     function setGross(v) {
@@ -464,7 +464,7 @@ function holeEntry(r) {
       save();
       const ng = r.scores[p.id][cur] ?? null;
       valEl.textContent = ng == null ? '–' : String(ng);
-      valEl.classList.toggle('empty', ng == null);
+      valEl.classList.toggle('blank', ng == null);
       const np = holePoints(ng, hole.par, sr);
       ptsEl.textContent = np == null ? '–' : String(np);
       ptsEl.className = 'p ' + (np == null ? '' : np === 0 ? 'zero' : 'good');
