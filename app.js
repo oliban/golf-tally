@@ -124,6 +124,17 @@ function currentRound() {
   return state.rounds.find(r => r.id === state.view.roundId);
 }
 
+// Display name for a round: the course name, auto-numbered when more than one
+// round is played on the same course the same day (2nd onwards gets " #N").
+function roundLabel(round) {
+  const base = round.courseName || 'Round';
+  const sameDay = state.rounds
+    .filter(r => r.date === round.date && (r.courseName || 'Round') === base)
+    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  const ordinal = sameDay.findIndex(r => r.id === round.id) + 1;
+  return ordinal > 1 ? `${base} #${ordinal}` : base;
+}
+
 /* ----------------------------- helpers ----------------------------- */
 
 function h(tag, attrs, children) {
@@ -190,8 +201,8 @@ function screenHome() {
       const thru = Math.max(...r.players.map(p => playerTotals(r, p).played), 0);
       content.appendChild(h('div', { class: 'card tappable round-card', onclick: () => go({ name: 'round', roundId: r.id }) }, [
         h('div', { class: 'meta' }, [
-          h('div', { class: 'title' }, r.name || r.courseName || 'Round'),
-          h('div', { class: 'sub' }, `${r.courseName && r.name ? r.courseName + ' · ' : ''}${fmtDate(r.date)} · ${r.holes.length} holes · ${r.players.length} player${r.players.length > 1 ? 's' : ''}`),
+          h('div', { class: 'title' }, roundLabel(r)),
+          h('div', { class: 'sub' }, `${fmtDate(r.date)} · ${r.holes.length} holes · ${r.players.length} player${r.players.length > 1 ? 's' : ''}`),
         ]),
         top ? h('div', { class: 'lead' }, [
           h('strong', null, String(top.points)),
@@ -224,7 +235,6 @@ function startNewRound() {
     name: 'setup',
     draft: {
       id: uid(),
-      name: '',
       date: new Date().toISOString().slice(0, 10),
       holesCount: 18,
       preset: 'flat',
@@ -239,13 +249,8 @@ function screenSetup() {
   const d = state.view.draft;
   const content = h('div', { class: 'content' });
 
-  // Round name + date
+  // Date + holes (the round name is derived from the course automatically)
   const card1 = h('div', { class: 'card' }, [
-    h('label', { class: 'field' }, [
-      h('span', { class: 'lbl' }, 'Round name (optional)'),
-      h('input', { type: 'text', placeholder: 'e.g. Saturday at Pine Valley', value: d.name,
-        oninput: e => { d.name = e.target.value; } }),
-    ]),
     h('label', { class: 'field' }, [
       h('span', { class: 'lbl' }, 'Date'),
       h('input', { type: 'date', value: d.date, oninput: e => { d.date = e.target.value; } }),
@@ -377,7 +382,6 @@ function commitNewRound() {
 
   const round = {
     id: d.id,
-    name: (d.name || '').trim(),
     date: d.date,
     courseId: courseId || null,
     courseName,
@@ -425,7 +429,7 @@ function screenRound() {
   else content.appendChild(scorecardTable(r));
 
   return h('div', null, [
-    topbar(r.name || r.courseName || 'Round', {
+    topbar(roundLabel(r), {
       back: () => go({ name: 'home' }),
       action: { label: '⋯', onclick: () => go({ name: 'roundMenu', roundId: r.id }) },
     }),
@@ -611,12 +615,12 @@ function screenRoundMenu() {
   const content = h('div', { class: 'content' }, [
     h('div', { class: 'card' }, [
       h('div', { class: 'section-label' }, 'Round'),
-      h('div', { style: 'font-weight:650;font-size:18px;margin-bottom:4px' }, r.name || 'Round'),
+      h('div', { style: 'font-weight:650;font-size:18px;margin-bottom:4px' }, roundLabel(r)),
       h('div', { class: 'dim' }, `${fmtDate(r.date)} · ${r.holes.length} holes · ${r.players.length} players`),
     ]),
     h('button', { class: 'btn secondary', style: 'margin-bottom:12px', onclick: () => go({ name: 'round', roundId: r.id }) }, 'Back to scoring'),
     h('button', { class: 'btn danger', onclick: () => {
-      if (confirm(`Delete "${r.name || 'this round'}"? This cannot be undone.`)) {
+      if (confirm(`Delete "${roundLabel(r)}"? This cannot be undone.`)) {
         state.rounds = state.rounds.filter(x => x.id !== r.id);
         save();
         go({ name: 'home' });
