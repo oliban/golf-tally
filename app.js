@@ -526,7 +526,10 @@ function scorecardTable(r) {
   const thead = h('thead');
   const hr = h('tr');
   hr.appendChild(h('th', { class: 'hole-col' }, 'Hole'));
-  r.players.forEach(p => hr.appendChild(h('th', null, p.name.split(' ')[0])));
+  r.players.forEach(p => hr.appendChild(h('th', null, [
+    h('div', { class: 'ph-name' }, p.name.split(' ')[0]),
+    h('div', { class: 'ph-hcp' }, `HCP ${p.handicap}`),
+  ])));
   thead.appendChild(hr);
   tbl.appendChild(thead);
 
