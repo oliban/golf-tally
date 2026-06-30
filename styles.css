@@ -8,6 +8,7 @@
   --muted: #5d6b62;
   --line: #e2e8e3;
   --accent: #f5a623;
+  --orange: #e8730c;
   --danger: #c0392b;
   /* Par = amber, SI = blue — course-setup accents, distinct from scoring green. */
   --par: #b9770f;
@@ -242,7 +243,12 @@ table.card-tbl thead th .ph-hcp { font-size: 10px; font-weight: 600; color: var(
 table.card-tbl th.hole-col, table.card-tbl td.hole-col { text-align: left; position: sticky; left: 0; background: #fff; font-weight: 600; box-shadow: 1px 0 0 var(--line); }
 table.card-tbl thead th.hole-col { background: #f7faf8; }
 table.card-tbl .g { font-weight: 600; }
-table.card-tbl .pt { font-size: 11px; color: var(--green-light); }
+table.card-tbl .pt { font-size: 11px; font-weight: 700; }
+table.card-tbl .pt.p0 { color: var(--danger); }       /* 0 pts — red */
+table.card-tbl .pt.p1 { color: var(--orange); }        /* 1 pt  — orange */
+table.card-tbl .pt.p2 { color: var(--ink); }           /* 2 pts — black */
+table.card-tbl .pt.p3 { color: var(--green-light); }   /* 3 pts — green */
+table.card-tbl .pt.p4 { color: var(--green-dark); }    /* 4+ pts — dark green */
 table.card-tbl tr.tot td { font-weight: 800; background: #f2f8f4; border-top: 2px solid var(--line); }
 table.card-tbl .pace { font-size: 11px; font-weight: 700; }
 table.card-tbl .pace.behind { color: var(--danger); }

@@ -57,6 +57,15 @@ function holePoints(gross, par, strokes) {
   return Math.max(0, par - net + 2);
 }
 
+// Colour bucket for a hole's Stableford points: 0 red, 1 orange, 2 black,
+// 3 green, 4+ dark green.
+function ptsClass(pts) {
+  if (pts == null) return '';
+  if (pts <= 0) return 'p0';
+  if (pts >= 4) return 'p4';
+  return 'p' + pts; // p1, p2, p3
+}
+
 function playerTotals(round, player) {
   let points = 0, gross = 0, played = 0;
   for (const hole of round.holes) {
@@ -561,7 +570,7 @@ function scorecardTable(r) {
       const pts = holePoints(g ?? null, hole.par, sr);
       tr.appendChild(h('td', null, g == null
         ? h('span', { class: 'dim' }, '–')
-        : h('span', null, [h('span', { class: 'g' }, String(g)), h('span', { class: 'pt' }, ` (${pts})`)])));
+        : h('span', null, [h('span', { class: 'g' }, String(g)), h('span', { class: 'pt ' + ptsClass(pts) }, ` (${pts})`)])));
     });
     tbody.appendChild(tr);
   });
