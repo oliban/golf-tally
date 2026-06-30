@@ -639,7 +639,23 @@ render();
 
 /* ----------------------------- service worker ----------------------------- */
 if ('serviceWorker' in navigator) {
+  // When a new worker takes control (after an update), reload once so the
+  // freshly-deployed assets are shown without a manual refresh.
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => { /* offline is best-effort */ });
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      // Check for a new version on launch and whenever the app regains focus
+      // (e.g. reopened from the home screen) — this is what makes it self-update.
+      reg.update();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update();
+      });
+    }).catch(() => { /* offline is best-effort */ });
   });
 }

@@ -1,5 +1,7 @@
-/* Minimal offline cache so the app keeps working on the course with no signal. */
-const CACHE = 'golf-v2';
+/* Offline cache for the course, but network-first so an online launch always
+ * gets the latest app. Falls back to the cache (and the app shell) when there's
+ * no signal. Bump CACHE only to force a hard reset of cached assets. */
+const CACHE = 'golf-v3';
 const ASSETS = [
   '.',
   'index.html',
@@ -22,13 +24,21 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then((hit) =>
-      hit || fetch(e.request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-        return res;
-      }).catch(() => caches.match('index.html'))
-    )
-  );
+  e.respondWith(networkFirst(e.request));
 });
+
+// Try the network (with a short timeout so a weak signal doesn't hang the app),
+// update the cache on success, and serve the cache when offline.
+async function networkFirst(request) {
+  try {
+    const res = await Promise.race([
+      fetch(request),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+    ]);
+    caches.open(CACHE).then((c) => c.put(request, res.clone())).catch(() => {});
+    return res;
+  } catch (err) {
+    const cached = await caches.match(request);
+    return cached || caches.match('index.html');
+  }
+}
