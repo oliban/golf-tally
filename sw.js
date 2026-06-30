@@ -1,5 +1,5 @@
 /* Minimal offline cache so the app keeps working on the course with no signal. */
-const CACHE = 'golf-v1';
+const CACHE = 'golf-v2';
 const ASSETS = [
   '.',
   'index.html',
