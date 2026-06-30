@@ -1,0 +1,31 @@
+name: Deploy to Fly.io
+
+# Auto-deploy the static site to Fly on every push to main.
+on:
+  push:
+    branches:
+      - main
+    # Skip deploys for docs-only changes that don't ship in the image.
+    paths-ignore:
+      - 'README.md'
+      - '.gitignore'
+      - '.github/**'
+  workflow_dispatch: {}
+
+# One deploy at a time; cancel an in-flight run if a newer push lands.
+concurrency:
+  group: fly-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
