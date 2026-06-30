@@ -161,6 +161,7 @@ input:focus { outline: none; border-color: var(--green-light); }
 .hole-title { text-align: center; flex: 1; }
 .hole-title .n { font-size: 30px; font-weight: 800; color: var(--green); line-height: 1; }
 .hole-title .pp { font-size: 14px; color: var(--muted); margin-top: 4px; }
+.hole-end { text-align: center; color: var(--muted); font-size: 14px; font-weight: 600; padding: 16px; margin-top: 6px; }
 
 .par-edit { display: flex; gap: 10px; justify-content: center; margin-bottom: 8px; }
 .par-edit .mini { background: #eef1ee; border-radius: 12px; padding: 7px 10px; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }

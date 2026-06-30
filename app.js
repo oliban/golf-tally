@@ -488,10 +488,12 @@ function holeEntry(r) {
     ]));
   });
 
-  // Quick "next hole" button
-  box.appendChild(h('button', { class: 'btn secondary', style: 'margin-top:6px',
-    onclick: () => setHole(cur + 1), disabled: cur === N },
-    cur === N ? 'Last hole' : 'Next hole  ›'));
+  // Quick "next hole" button — on the final hole there's nowhere to go, so show
+  // a plain end-of-round hint instead of a (dead-looking) button.
+  box.appendChild(cur === N
+    ? h('div', { class: 'hole-end' }, 'Last hole')
+    : h('button', { class: 'btn secondary', style: 'margin-top:6px',
+        onclick: () => setHole(cur + 1) }, 'Next hole  ›'));
 
   return box;
 }
