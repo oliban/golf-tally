@@ -203,6 +203,13 @@ function screenHome() {
 }
 
 function startNewRound() {
+  // Prefill the roster from the most recent round so you don't re-enter
+  // players every time; trim or edit them on the setup screen as needed.
+  const last = [...state.rounds].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))[0];
+  const players = last && last.players.length
+    ? last.players.map(p => ({ id: uid(), name: p.name, handicap: String(p.handicap) }))
+    : [{ id: uid(), name: '', handicap: '' }];
+
   // Seed a draft round in the setup screen.
   go({
     name: 'setup',
@@ -214,7 +221,7 @@ function startNewRound() {
       preset: 'flat',
       courseId: null,      // links to a saved course layout, if chosen
       courseName: '',      // name for selecting/creating a course
-      players: [{ id: uid(), name: '', handicap: '' }],
+      players,
     },
   });
 }
@@ -242,7 +249,9 @@ function screenSetup() {
   ]);
 
   // Course — a remembered layout of par + stroke index, reusable across rounds.
-  const savedCourses = state.courses.filter(c => c.holesCount === d.holesCount);
+  // Show every saved course regardless of the hole count picked above; choosing
+  // one switches the round to that course's hole count.
+  const savedCourses = state.courses;
   const selected = d.courseId ? state.courses.find(c => c.id === d.courseId) : null;
   const courseCard = h('div', { class: 'card' });
   courseCard.appendChild(h('div', { class: 'section-label' }, 'Course'));
@@ -253,10 +262,10 @@ function screenSetup() {
         class: 'chip' + (d.courseId === c.id ? ' on' : ''),
         onclick: () => {
           if (d.courseId === c.id) { d.courseId = null; d.courseName = ''; }
-          else { d.courseId = c.id; d.courseName = c.name; }
+          else { d.courseId = c.id; d.courseName = c.name; d.holesCount = c.holesCount; }
           rerenderSetup();
         },
-      }, `${c.name} · par ${c.holes.reduce((s, hh) => s + hh.par, 0)}`));
+      }, `${c.name} · ${c.holesCount}h · par ${c.holes.reduce((s, hh) => s + hh.par, 0)}`));
     });
     courseCard.appendChild(chips);
   }
@@ -288,8 +297,9 @@ function screenSetup() {
     playersCard.appendChild(h('div', { class: 'player-row' }, [
       h('input', { class: 'name', type: 'text', placeholder: `Player ${i + 1}`, value: p.name,
         oninput: e => { p.name = e.target.value; } }),
-      h('input', { class: 'hcp', type: 'number', inputmode: 'numeric', placeholder: 'HCP', value: p.handicap,
-        oninput: e => { p.handicap = e.target.value; } }),
+      h('input', { class: 'hcp' + (d.hcpError && String(p.handicap).trim() === '' ? ' invalid' : ''),
+        type: 'number', inputmode: 'numeric', placeholder: 'HCP', value: p.handicap,
+        oninput: e => { p.handicap = e.target.value; if (d.hcpError) d.hcpError = false; e.target.classList.remove('invalid'); } }),
       d.players.length > 1 ? h('button', { class: 'rm', onclick: () => { d.players.splice(i, 1); rerenderSetup(); } }, '×') : null,
     ]));
   });
@@ -317,12 +327,20 @@ function rerenderSetup() { render(); }
 
 function commitNewRound() {
   const d = state.view.draft;
-  const named = d.players.map((p, i) => ({
+  // Drop fully-blank rows, then require a handicap for every remaining player.
+  const rows = d.players.filter(p => (p.name || '').trim() !== '' || String(p.handicap).trim() !== '');
+  if (rows.length === 0) { toast('Add at least one player'); return; }
+  if (rows.some(p => String(p.handicap).trim() === '' || !Number.isFinite(Number(p.handicap)))) {
+    d.hcpError = true;
+    rerenderSetup();
+    toast('Set a handicap for every player');
+    return;
+  }
+  const named = rows.map((p, i) => ({
     id: p.id,
     name: (p.name || '').trim() || `Player ${i + 1}`,
-    handicap: Number(p.handicap) || 0,
+    handicap: Number(p.handicap),
   }));
-  if (named.length === 0) { toast('Add at least one player'); return; }
 
   // Resolve the course: an explicitly-picked one, else match a typed name,
   // else create a new saved course from the chosen template (if named).

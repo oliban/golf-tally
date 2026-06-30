@@ -155,6 +155,7 @@ input:focus { outline: none; border-color: var(--green-light); }
 .player-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
 .player-row input.name { flex: 2; }
 .player-row input.hcp { flex: 1; min-width: 0; text-align: center; }
+.player-row input.hcp.invalid { border-color: var(--danger); background: #fdecea; }
 .player-row .rm { background: #fff; border: 1.5px solid #f0d4d0; color: var(--danger); border-radius: 10px; width: 44px; height: 48px; font-size: 20px; flex: none; }
 .add-player { margin-top: 4px; }
 
