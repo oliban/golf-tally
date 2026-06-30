@@ -1,0 +1,14 @@
+{
+  "name": "Golf Scorecard",
+  "short_name": "Golf",
+  "description": "Keep tally on ongoing golf rounds with handicap-based Stableford points.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b6b3a",
+  "theme_color": "#0b6b3a",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

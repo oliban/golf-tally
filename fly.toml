@@ -1,0 +1,22 @@
+# Fly.io config for the Golf Scorecard (static nginx site).
+#
+# Fly app names are GLOBALLY UNIQUE. "golf" and "golf-scorecard" are both taken;
+# "golftally" was free at setup time -> https://golftally.fly.dev
+# Confirm with: fly apps create golftally   (errors if taken -> pick another)
+app = "golftally"
+primary_region = "arn"  # Stockholm
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  # Pure static + client-side storage, so it's safe to scale to zero when idle.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
