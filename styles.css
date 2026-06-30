@@ -25,6 +25,9 @@ html, body {
   font-size: 17px;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-y: none;
+  /* Allow scroll/pinch but kill the double-tap-to-zoom gesture (iOS ignores
+     user-scalable=no for double-tap, so this is the reliable way). */
+  touch-action: manipulation;
 }
 
 #app { min-height: 100vh; }
