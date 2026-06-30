@@ -548,12 +548,20 @@ function scorecardTable(r) {
     tbody.appendChild(tr);
   });
 
-  // Totals
+  // Totals — points, with a pace delta vs 2 pts/hole (18 per 9 = playing to
+  // handicap). e.g. 5 pts after 3 holes shows (-1): one point behind pace.
   const tot = h('tr', { class: 'tot' });
   tot.appendChild(h('td', { class: 'hole-col' }, 'Points'));
   r.players.forEach(p => {
     const t = playerTotals(r, p);
-    tot.appendChild(h('td', null, String(t.points)));
+    let pace = null;
+    if (t.played > 0) {
+      const delta = t.points - 2 * t.played;
+      const cls = delta < 0 ? 'behind' : delta > 0 ? 'ahead' : 'even';
+      const txt = delta === 0 ? 'E' : delta > 0 ? '+' + delta : String(delta);
+      pace = h('span', { class: 'pace ' + cls }, ` (${txt})`);
+    }
+    tot.appendChild(h('td', null, [String(t.points), pace]));
   });
   tbody.appendChild(tot);
 
