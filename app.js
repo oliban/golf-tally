@@ -428,8 +428,10 @@ function holeEntry(r) {
   // editing is one-tap on mobile and never loses focus. Changes are saved back
   // to the linked course so you don't re-enter them next round.
   function commitHoleMeta() { r.updatedAt = Date.now(); syncCourseHole(r, hole); save(); go(state.view); }
-  function metaStepper(label, value, dec, inc) {
-    return h('div', { class: 'mini' }, [
+  // `kind` ('par' | 'si') drives the colour coding so these course-setup
+  // controls are easy to tell apart from the green player-score steppers.
+  function metaStepper(label, kind, value, dec, inc) {
+    return h('div', { class: 'mini ' + kind }, [
       h('span', { class: 'mini-lbl' }, label),
       h('button', { class: 'mini-btn', onclick: dec }, '−'),
       h('span', { class: 'mini-val' }, String(value)),
@@ -437,10 +439,10 @@ function holeEntry(r) {
     ]);
   }
   box.appendChild(h('div', { class: 'par-edit' }, [
-    metaStepper('Par', hole.par,
+    metaStepper('Par', 'par', hole.par,
       () => { hole.par = Math.max(1, hole.par - 1); commitHoleMeta(); },
       () => { hole.par = hole.par + 1; commitHoleMeta(); }),
-    metaStepper('SI', hole.si,
+    metaStepper('SI', 'si', hole.si,
       () => { hole.si = Math.max(1, hole.si - 1); commitHoleMeta(); },
       () => { hole.si = Math.min(N, hole.si + 1); commitHoleMeta(); }),
   ]));

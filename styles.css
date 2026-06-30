@@ -9,6 +9,11 @@
   --line: #e2e8e3;
   --accent: #f5a623;
   --danger: #c0392b;
+  /* Par = amber, SI = blue — course-setup accents, distinct from scoring green. */
+  --par: #b9770f;
+  --par-tint: #fcf1dd;
+  --si: #2a64d4;
+  --si-tint: #e9f0fc;
   --radius: 14px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -167,11 +172,16 @@ input:focus { outline: none; border-color: var(--green-light); }
 .hole-end { text-align: center; color: var(--muted); font-size: 14px; font-weight: 600; padding: 16px; margin-top: 6px; }
 
 .par-edit { display: flex; gap: 10px; justify-content: center; margin-bottom: 8px; }
-.par-edit .mini { background: #eef1ee; border-radius: 12px; padding: 7px 10px; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.par-edit .mini { border-radius: 12px; padding: 7px 10px; font-size: 13px; display: flex; align-items: center; gap: 8px; border: 1.5px solid transparent; }
 .par-edit .mini-lbl { font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
-.par-edit .mini-btn { width: 34px; height: 34px; border-radius: 9px; border: none; background: #fff; color: var(--green); font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-.par-edit .mini-btn:active { background: #e7efe9; }
-.par-edit .mini-val { min-width: 22px; text-align: center; font-size: 17px; font-weight: 750; color: var(--ink); }
+.par-edit .mini-btn { width: 34px; height: 34px; border-radius: 9px; border: none; background: #fff; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.par-edit .mini-btn:active { filter: brightness(.94); }
+.par-edit .mini-val { min-width: 22px; text-align: center; font-size: 17px; font-weight: 750; }
+/* Colour-coded course-setup steppers, set apart from the green score steppers. */
+.par-edit .mini.par { background: var(--par-tint); border-color: #f0d9ac; }
+.par-edit .mini.par .mini-lbl, .par-edit .mini.par .mini-val, .par-edit .mini.par .mini-btn { color: var(--par); }
+.par-edit .mini.si { background: var(--si-tint); border-color: #c6d8f6; }
+.par-edit .mini.si .mini-lbl, .par-edit .mini.si .mini-val, .par-edit .mini.si .mini-btn { color: var(--si); }
 .course-note { text-align: center; font-size: 12px; color: var(--green-light); margin-bottom: 14px; font-weight: 600; }
 
 /* course chips in setup */
