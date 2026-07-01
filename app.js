@@ -10,10 +10,21 @@
  *   - points = max(0, par - net + 2)   (net par = 2 pts, net bogey = 1, net birdie = 3, ...)
  *
  * Courses (par/SI/slope) are the source of truth: a round reads them live via
- * holesFor()/slopeFor(), so editing a course updates its existing scorecards.
+ * holesFor()/teesFor(), so editing a course updates its existing scorecards.
  */
 
 const STORE_KEY = 'golf.scorecard.v1';
+
+// Tees a player can play off; each has its own slope + course rating on a course.
+const TEES = [
+  { key: 'yellow', label: 'Yellow', color: '#e0a400' },
+  { key: 'red', label: 'Red', color: '#dc2626' },
+];
+const DEFAULT_TEE = TEES[0].key;
+function teeInfo(key) { return TEES.find(t => t.key === key) || TEES[0]; }
+function emptyTees() { return { yellow: { slope: 113, cr: null }, red: { slope: 113, cr: null } }; }
+// Course rating is a decimal (e.g. 30.4); blank means "unknown" (skip the CR term).
+function parseCR(v) { const n = Number(v); return Number.isFinite(n) && String(v).trim() !== '' ? n : null; }
 
 /* ----------------------------- state ----------------------------- */
 
@@ -27,6 +38,23 @@ function loadState() {
 
 let state = loadState();
 if (!state.courses) state.courses = []; // courses are remembered course layouts (par + SI)
+if (!state.rounds) state.rounds = [];
+migrateState();
+
+// Bring older saved data up to the current shape: per-tee { slope, cr } on
+// courses and rounds, and a tee on every player.
+function migrateState() {
+  const legacyTees = (obj) => {
+    const y = obj.slopes?.yellow ?? obj.slope ?? 113;
+    const r = obj.slopes?.red ?? obj.slope ?? 113;
+    return { yellow: { slope: y, cr: null }, red: { slope: r, cr: null } };
+  };
+  state.courses.forEach(c => { if (!c.tees) c.tees = legacyTees(c); });
+  state.rounds.forEach(r => {
+    if (!r.tees) r.tees = legacyTees(r);
+    r.players.forEach(p => { if (!p.tee) p.tee = DEFAULT_TEE; });
+  });
+}
 
 function save() {
   // Write synchronously on every change so nothing is lost if the page is
@@ -41,13 +69,19 @@ function uid() {
 
 /* ----------------------------- scoring ----------------------------- */
 
-// Course handicap = the strokes a player actually plays off here, adjusting the
-// handicap index by the course slope (113 = neutral). Halved over 9 holes.
-function courseHandicap(handicapIndex, holesCount, slope) {
-  const h = Number(handicapIndex) || 0;
+// Course handicap (WHS) = the strokes a player plays off this tee:
+//   CH = round( HI_used * slope/113 + (courseRating - par) )
+// where HI_used is the handicap index (halved for a 9-hole round), and the
+// (CR - par) term is only applied when a course rating is known.
+function courseHandicap(handicapIndex, holesCount, slope, courseRating, par) {
+  const hiFull = Number(handicapIndex) || 0;
+  const hi = holesCount === 9 ? hiFull / 2 : hiFull;
   const s = Number(slope) || 113;
-  const ch = h * (s / 113);
-  return holesCount === 9 ? Math.round(ch / 2) : Math.round(ch);
+  let ch = hi * (s / 113);
+  const cr = Number(courseRating);
+  const p = Number(par);
+  if (Number.isFinite(cr) && Number.isFinite(p)) ch += cr - p;
+  return Math.round(ch);
 }
 
 // Slope ratings run 55–155; 113 is the neutral value (no adjustment).
@@ -56,8 +90,8 @@ function clampSlope(v) {
   return Number.isFinite(n) ? Math.min(155, Math.max(55, n)) : 113;
 }
 
-function strokesReceived(handicapIndex, si, holesCount, slope) {
-  const ph = courseHandicap(handicapIndex, holesCount, slope);
+function strokesReceived(handicapIndex, si, holesCount, slope, courseRating, par) {
+  const ph = courseHandicap(handicapIndex, holesCount, slope, courseRating, par);
   if (ph <= 0 || !si) return 0;
   const base = Math.floor(ph / holesCount);
   const remainder = ph % holesCount;
@@ -89,21 +123,36 @@ function holesFor(round) {
   const c = roundCourse(round);
   return (c && c.holes) || round.holes;
 }
-function slopeFor(round) {
+function teesFor(round) {
   const c = roundCourse(round);
-  return (c && c.slope) || round.slope || 113;
+  return (c && c.tees) || round.tees || emptyTees();
+}
+// The { slope, cr } a given player plays off, based on their tee.
+function teeDataForPlayer(round, player) {
+  const t = teesFor(round);
+  return t[player.tee] || t[DEFAULT_TEE] || { slope: 113, cr: null };
+}
+function parFor(round) {
+  return holesFor(round).reduce((s, hh) => s + (Number(hh.par) || 0), 0);
+}
+// Course handicap for a player on this round (slope + CR of their tee).
+function playerCourseHandicap(round, player) {
+  const holes = holesFor(round);
+  const { slope, cr } = teeDataForPlayer(round, player);
+  return courseHandicap(player.handicap, holes.length, slope, cr, parFor(round));
 }
 
 function playerTotals(round, player) {
   const holes = holesFor(round);
-  const slope = slopeFor(round);
+  const par = parFor(round);
+  const { slope, cr } = teeDataForPlayer(round, player);
   let points = 0, gross = 0, played = 0;
   for (const hole of holes) {
     const g = round.scores[player.id]?.[hole.index];
     if (g == null) continue;
     played++;
     gross += g;
-    const sr = strokesReceived(player.handicap, hole.si, holes.length, slope);
+    const sr = strokesReceived(player.handicap, hole.si, holes.length, slope, cr, par);
     points += holePoints(g, hole.par, sr);
   }
   return { points, gross, played };
@@ -247,8 +296,8 @@ function startNewRound() {
   // players every time; trim or edit them on the setup screen as needed.
   const last = [...state.rounds].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))[0];
   const players = last && last.players.length
-    ? last.players.map(p => ({ id: uid(), name: p.name, handicap: String(p.handicap) }))
-    : [{ id: uid(), name: '', handicap: '' }];
+    ? last.players.map(p => ({ id: uid(), name: p.name, handicap: String(p.handicap), tee: p.tee || DEFAULT_TEE }))
+    : [{ id: uid(), name: '', handicap: '', tee: DEFAULT_TEE }];
 
   // Seed a draft round in the setup screen.
   go({
@@ -260,7 +309,7 @@ function startNewRound() {
       preset: 'flat',
       courseId: null,      // links to a saved course layout, if chosen
       courseName: '',      // name for selecting/creating a course
-      slope: 113,          // slope for a newly-created course (neutral default)
+      tees: emptyTees(),   // per-tee { slope, cr } for a newly-created course
       players,
     },
   });
@@ -309,17 +358,26 @@ function screenSetup() {
     h('input', { type: 'text', placeholder: 'e.g. Pine Hills', value: d.courseName,
       oninput: e => { d.courseName = e.target.value; d.courseId = null; } }),
   ]));
-  // Slope (only relevant once there's a course). Editing a saved course's slope
-  // writes straight to the course, so existing scorecards for it recompute.
+  // Per-tee slope + course rating (only relevant once there's a course). Editing
+  // a saved course writes straight to it, so its scorecards recompute.
   if (selected || d.courseName.trim()) {
-    courseCard.appendChild(h('label', { class: 'field', style: 'margin:12px 0 0' }, [
-      h('span', { class: 'lbl' }, 'Slope rating (55–155, 113 = neutral)'),
-      h('input', { type: 'number', inputmode: 'numeric', min: '55', max: '155', placeholder: '113',
-        value: selected ? (selected.slope || 113) : (d.slope ?? 113),
-        oninput: e => {
-          if (selected) { selected.slope = clampSlope(e.target.value); selected.updatedAt = Date.now(); save(); }
-          else { d.slope = e.target.value; }
-        } }),
+    const tees = selected ? (selected.tees || (selected.tees = emptyTees())) : d.tees;
+    const touch = () => { if (selected) { selected.updatedAt = Date.now(); save(); } };
+    courseCard.appendChild(h('div', { class: 'field', style: 'margin:12px 0 0' }, [
+      h('span', { class: 'lbl' }, 'Tee slope (55–155) & course rating'),
+      h('div', { class: 'tee-ratings' }, TEES.map(t => {
+        const td = tees[t.key] || (tees[t.key] = { slope: 113, cr: null });
+        return h('div', { class: 'tee-rating' }, [
+          h('span', { class: 'tee-dot', style: `background:${t.color}` }),
+          h('span', { class: 'tee-name' }, t.label),
+          h('input', { class: 'sl', type: 'number', inputmode: 'numeric', min: '55', max: '155', placeholder: 'slope',
+            value: td.slope ?? 113,
+            oninput: e => { td.slope = selected ? clampSlope(e.target.value) : e.target.value; touch(); } }),
+          h('input', { class: 'cr', type: 'number', inputmode: 'decimal', step: '0.1', placeholder: 'CR',
+            value: td.cr ?? '',
+            oninput: e => { td.cr = selected ? parseCR(e.target.value) : e.target.value; touch(); } }),
+        ]);
+      })),
     ]));
   }
   if (!selected) {
@@ -340,24 +398,33 @@ function screenSetup() {
 
   // Players
   const playersCard = h('div', { class: 'card' });
-  playersCard.appendChild(h('div', { class: 'section-label' }, 'Players & handicaps'));
+  playersCard.appendChild(h('div', { class: 'section-label' }, 'Players, handicaps & tees'));
   d.players.forEach((p, i) => {
-    playersCard.appendChild(h('div', { class: 'player-row' }, [
-      h('input', { class: 'name', type: 'text', placeholder: `Player ${i + 1}`, value: p.name,
-        oninput: e => { p.name = e.target.value; } }),
-      h('input', { class: 'hcp' + (d.hcpError && String(p.handicap).trim() === '' ? ' invalid' : ''),
-        type: 'number', inputmode: 'numeric', placeholder: 'HCP', value: p.handicap,
-        oninput: e => { p.handicap = e.target.value; if (d.hcpError) d.hcpError = false; e.target.classList.remove('invalid'); } }),
-      d.players.length > 1 ? h('button', { class: 'rm', onclick: () => { d.players.splice(i, 1); rerenderSetup(); } }, '×') : null,
+    if (!p.tee) p.tee = DEFAULT_TEE;
+    playersCard.appendChild(h('div', { class: 'player-entry' }, [
+      h('div', { class: 'player-row' }, [
+        h('input', { class: 'name', type: 'text', placeholder: `Player ${i + 1}`, value: p.name,
+          oninput: e => { p.name = e.target.value; } }),
+        h('input', { class: 'hcp' + (d.hcpError && String(p.handicap).trim() === '' ? ' invalid' : ''),
+          type: 'number', inputmode: 'numeric', placeholder: 'HCP', value: p.handicap,
+          oninput: e => { p.handicap = e.target.value; if (d.hcpError) d.hcpError = false; e.target.classList.remove('invalid'); } }),
+        d.players.length > 1 ? h('button', { class: 'rm', onclick: () => { d.players.splice(i, 1); rerenderSetup(); } }, '×') : null,
+      ]),
+      h('div', { class: 'tee-row' }, TEES.map(t =>
+        h('button', { class: 'tee-btn' + (p.tee === t.key ? ' on' : ''), style: `--tc:${t.color}`,
+          onclick: () => { p.tee = t.key; rerenderSetup(); } }, [
+          h('span', { class: 'tee-dot', style: `background:${t.color}` }),
+          t.label,
+        ]))),
     ]));
   });
   if (d.players.length < 4) {
     playersCard.appendChild(h('button', { class: 'btn ghost add-player', onclick: () => {
-      d.players.push({ id: uid(), name: '', handicap: '' }); rerenderSetup();
+      d.players.push({ id: uid(), name: '', handicap: '', tee: DEFAULT_TEE }); rerenderSetup();
     } }, '+ Add player'));
   }
   playersCard.appendChild(h('div', { class: 'hint', style: 'margin-bottom:0' },
-    'Handicap sets how many strokes each player gets per hole. e.g. 36 over 18 holes = 2 strokes a hole, so a 6 on a par 4 scores 2 points.'));
+    'Handicap + the tee’s slope set how many strokes each player gets. e.g. course handicap 36 over 18 holes = 2 strokes a hole, so a 6 on a par 4 scores 2 points.'));
 
   content.appendChild(card1);
   content.appendChild(courseCard);
@@ -388,6 +455,7 @@ function commitNewRound() {
     id: p.id,
     name: (p.name || '').trim() || `Player ${i + 1}`,
     handicap: Number(p.handicap),
+    tee: p.tee || DEFAULT_TEE,
   }));
 
   // Resolve the course: an explicitly-picked one, else match a typed name,
@@ -407,13 +475,24 @@ function commitNewRound() {
   } else {
     holes = makeHoles(d.holesCount, d.preset);
     if (typed) {
-      const c = { id: uid(), name: typed, holesCount: d.holesCount, slope: clampSlope(d.slope), holes: holes.map(hh => ({ ...hh })), updatedAt: Date.now() };
+      const tees = {};
+      TEES.forEach(t => {
+        const src = d.tees[t.key] || {};
+        tees[t.key] = { slope: clampSlope(src.slope), cr: parseCR(src.cr) };
+      });
+      const c = {
+        id: uid(), name: typed, holesCount: d.holesCount, tees,
+        holes: holes.map(hh => ({ ...hh })), updatedAt: Date.now(),
+      };
       state.courses.push(c);
       courseId = c.id;
       courseName = c.name;
     }
   }
-  const slopeSnapshot = courseId ? (state.courses.find(c => c.id === courseId)?.slope || 113) : 113;
+  const linkedCourse = courseId ? state.courses.find(c => c.id === courseId) : null;
+  const teesSnapshot = linkedCourse
+    ? JSON.parse(JSON.stringify(linkedCourse.tees))
+    : emptyTees();
 
   const round = {
     id: d.id,
@@ -421,7 +500,7 @@ function commitNewRound() {
     courseId: courseId || null,
     courseName,
     holes,
-    slope: slopeSnapshot,
+    tees: teesSnapshot,
     players: named,
     scores: Object.fromEntries(named.map(p => [p.id, {}])),
     currentHole: 1,
@@ -475,7 +554,6 @@ function screenRound() {
 
 function holeEntry(r) {
   const holes = holesFor(r);
-  const slope = slopeFor(r);
   const N = holes.length;
   let cur = Math.min(Math.max(r.currentHole || 1, 1), N);
   const hole = holes[cur - 1];
@@ -523,11 +601,14 @@ function holeEntry(r) {
       () => { hole.si = Math.min(N, hole.si + 1); commitHoleMeta(); }),
   ]));
 
-  // One row per player
+  // One row per player — strokes depend on the slope + CR of that player's tee.
+  const par = parFor(r);
   r.players.forEach(p => {
+    const tee = teeInfo(p.tee);
+    const td = teeDataForPlayer(r, p);
     const g = r.scores[p.id][cur] ?? null;
-    const sr = strokesReceived(p.handicap, hole.si, N, slope);
-    const ch = courseHandicap(p.handicap, N, slope);
+    const sr = strokesReceived(p.handicap, hole.si, N, td.slope, td.cr, par);
+    const ch = playerCourseHandicap(r, p);
     const pts = holePoints(g, hole.par, sr);
 
     const valEl = h('div', { class: 'val' + (g == null ? ' blank' : '') }, g == null ? '–' : String(g));
@@ -549,7 +630,10 @@ function holeEntry(r) {
 
     box.appendChild(h('div', { class: 'score-row' }, [
       h('div', { class: 'who' }, [
-        h('div', { class: 'nm' }, p.name),
+        h('div', { class: 'nm' }, [
+          h('span', { class: 'tee-dot', style: `background:${tee.color}`, title: tee.label + ' tee' }),
+          p.name,
+        ]),
         h('div', { class: 'det' }, [
           `HCP ${p.handicap} · plays ${ch} · `,
           h('span', { class: 'dot' }, sr > 0 ? `+${sr} stroke${sr > 1 ? 's' : ''}` : 'no stroke'),
@@ -596,19 +680,27 @@ function refreshLeader(r) {
 
 function scorecardTable(r) {
   const holes = holesFor(r);
-  const slope = slopeFor(r);
   const N = holes.length;
+  const par = parFor(r);
   const wrap = h('div', { class: 'scroll-x' });
   const tbl = h('table', { class: 'card-tbl' });
 
-  // Head — name, handicap index, and the course handicap they play off here.
+  // Head — name, tee, handicap index, and the course handicap they play off.
   const thead = h('thead');
   const hr = h('tr');
-  hr.appendChild(h('th', { class: 'hole-col' }, `Hole · slope ${slope}`));
-  r.players.forEach(p => hr.appendChild(h('th', null, [
-    h('div', { class: 'ph-name' }, p.name.split(' ')[0]),
-    h('div', { class: 'ph-hcp' }, `HCP ${p.handicap} → ${courseHandicap(p.handicap, N, slope)}`),
-  ])));
+  hr.appendChild(h('th', { class: 'hole-col' }, 'Hole'));
+  r.players.forEach(p => {
+    const tee = teeInfo(p.tee);
+    const td = teeDataForPlayer(r, p);
+    hr.appendChild(h('th', null, [
+      h('div', { class: 'ph-name' }, [
+        h('span', { class: 'tee-dot', style: `background:${tee.color}`, title: tee.label + ' tee' }),
+        p.name.split(' ')[0],
+      ]),
+      h('div', { class: 'ph-hcp' }, `HCP ${p.handicap} → ${playerCourseHandicap(r, p)}`),
+      h('div', { class: 'ph-hcp' }, `${tee.label} · slope ${td.slope}${td.cr != null ? ' · CR ' + td.cr : ''}`),
+    ]));
+  });
   thead.appendChild(hr);
   tbl.appendChild(thead);
 
@@ -618,7 +710,8 @@ function scorecardTable(r) {
     tr.appendChild(h('td', { class: 'hole-col' }, `${hole.index} · par ${hole.par}`));
     r.players.forEach(p => {
       const g = r.scores[p.id]?.[hole.index];
-      const sr = strokesReceived(p.handicap, hole.si, N, slope);
+      const td = teeDataForPlayer(r, p);
+      const sr = strokesReceived(p.handicap, hole.si, N, td.slope, td.cr, par);
       const pts = holePoints(g ?? null, hole.par, sr);
       tr.appendChild(h('td', null, g == null
         ? h('span', { class: 'dim' }, '–')

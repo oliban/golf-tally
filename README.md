@@ -31,19 +31,24 @@ course.
 ## How scoring works
 
 ```
-courseHandicap  = round(HCP * slope / 113)   # 18 holes  (halved for 9)
+HI_used         = HCP           # 18 holes
+                = HCP / 2        # 9 holes
+courseHandicap  = round( HI_used * slope / 113 + (courseRating - par) )
 strokesOnHole   = floor(ch / holes) + (SI <= (ch mod holes) ? 1 : 0)
 net             = gross - strokesReceived
 points          = max(0, par - net + 2)
 ```
 
-The course **slope** (55–155, 113 = neutral) adjusts the handicap index into the
-**course handicap** each player actually plays off; the scorecard shows both
-(`HCP 18 → 21`). Example at neutral slope: a handicap of 36 over 18 holes gives 2
-strokes on every hole, so a gross 6 on a par 4 is a net 4 → **2 points**.
+This is the **WHS** course-handicap formula. Each **tee** (Yellow, Red) carries
+its own **slope** (55–155, 113 = neutral) and **course rating**, and every
+player is assigned a tee — so two players off different tees get different
+course handicaps. The scorecard shows each player's `HCP → courseHandicap`, tee,
+slope and CR.
 
-> Simplified Stableford: it uses handicap index, slope, and stroke index, but
-> not course rating, so it won't compute an official competition allowance.
+Example (Kungsbacka Myra, yellow, 9 holes, par 32, slope 97, CR 30.4): a
+handicap index of 40.6 gives `(40.6/2 × 97/113) + (30.4 − 32) = 15.8 → 16`
+strokes, spread by stroke index. If a tee's course rating is left blank the
+`(CR − par)` term is skipped (slope-only adjustment).
 
 ## Run it locally
 
