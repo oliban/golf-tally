@@ -78,9 +78,12 @@ function courseHandicap(handicapIndex, holesCount, slope, courseRating, par) {
   const hi = holesCount === 9 ? hiFull / 2 : hiFull;
   const s = Number(slope) || 113;
   let ch = hi * (s / 113);
-  const cr = Number(courseRating);
+  // Apply (CR - par) only when a course rating is actually set. Guard against
+  // null/'' first — Number(null) and Number('') are 0 (finite), which would
+  // otherwise subtract par and wreck the handicap when no CR is entered.
+  const hasCR = courseRating != null && courseRating !== '' && Number.isFinite(Number(courseRating));
   const p = Number(par);
-  if (Number.isFinite(cr) && Number.isFinite(p)) ch += cr - p;
+  if (hasCR && Number.isFinite(p)) ch += Number(courseRating) - p;
   return Math.round(ch);
 }
 
