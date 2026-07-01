@@ -168,6 +168,17 @@ function makeHoles(count, preset) {
   return holes;
 }
 
+// Grow/shrink a holes array to `n`, keeping par/SI of holes that remain and
+// clamping stroke indexes into range.
+function resizeHoles(holes, n) {
+  const out = [];
+  for (let i = 1; i <= n; i++) {
+    const ex = holes.find(hh => hh.index === i);
+    out.push(ex ? { index: i, par: ex.par, si: Math.min(ex.si || i, n) } : { index: i, par: 4, si: i });
+  }
+  return out;
+}
+
 /* ----------------------------- navigation ----------------------------- */
 
 function go(view) {
@@ -242,26 +253,67 @@ function topbar(title, opts = {}) {
 /* ----------------------------- screens ----------------------------- */
 
 function screenHome() {
-  const rounds = [...state.rounds].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  const tab = state.view.tab === 'courses' ? 'courses' : 'rounds';
   const content = h('div', { class: 'content' });
 
-  if (rounds.length === 0) {
-    content.appendChild(h('div', { class: 'empty' }, [
-      h('div', { class: 'big' }, '⛳️'),
-      h('div', null, 'No rounds yet.'),
-      h('div', { class: 'dim', html: 'Tap <strong>New round</strong> to start scoring.' }),
-    ]));
+  if (tab === 'rounds') {
+    const rounds = [...state.rounds].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    if (rounds.length === 0) {
+      content.appendChild(h('div', { class: 'empty' }, [
+        h('div', { class: 'big' }, '⛳️'),
+        h('div', null, 'No rounds yet.'),
+        h('div', { class: 'dim', html: 'Tap <strong>New round</strong> to start scoring.' }),
+      ]));
+    } else {
+      rounds.forEach(r => content.appendChild(roundRow(r)));
+    }
   } else {
-    rounds.forEach(r => content.appendChild(roundRow(r)));
+    const courses = [...state.courses].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    if (courses.length === 0) {
+      content.appendChild(h('div', { class: 'empty' }, [
+        h('div', { class: 'big' }, '🏌️'),
+        h('div', null, 'No courses yet.'),
+        h('div', { class: 'dim', html: 'Tap <strong>New course</strong> to add one.' }),
+      ]));
+    } else {
+      courses.forEach(c => content.appendChild(courseRow(c)));
+    }
   }
 
-  const wrap = h('div', null, [
-    topbar('My Rounds'),
-    content,
-    h('div', { class: 'fab-bar' }, h('div', { class: 'inner' },
-      h('button', { class: 'btn', onclick: () => startNewRound() }, '+  New round'))),
+  const tabs = h('div', { class: 'home-tabs' }, [
+    h('button', { class: 'home-tab' + (tab === 'rounds' ? ' on' : ''), onclick: () => go({ name: 'home', tab: 'rounds' }) }, 'My Rounds'),
+    h('button', { class: 'home-tab' + (tab === 'courses' ? ' on' : ''), onclick: () => go({ name: 'home', tab: 'courses' }) }, 'Courses'),
   ]);
-  return wrap;
+
+  const fab = tab === 'rounds'
+    ? h('button', { class: 'btn', onclick: () => startNewRound() }, '+  New round')
+    : h('button', { class: 'btn', onclick: () => newCourse() }, '+  New course');
+
+  return h('div', null, [
+    h('div', { class: 'topbar' }, tabs),
+    content,
+    h('div', { class: 'fab-bar' }, h('div', { class: 'inner' }, fab)),
+  ]);
+}
+
+// A course in the Courses tab — tap to edit.
+function courseRow(c) {
+  const parTotal = (c.holes || []).reduce((s, hh) => s + (Number(hh.par) || 0), 0);
+  const slopes = TEES.map(t => `${t.label[0]} ${c.tees?.[t.key]?.slope ?? 113}`).join(' · ');
+  return h('div', { class: 'card tappable round-card', onclick: () => go({ name: 'course', courseId: c.id }) }, [
+    h('div', { class: 'meta' }, [
+      h('div', { class: 'title' }, c.name || 'Untitled course'),
+      h('div', { class: 'sub' }, `${c.holesCount} holes · par ${parTotal} · slope ${slopes}`),
+    ]),
+    h('div', { class: 'chev' }, '›'),
+  ]);
+}
+
+function newCourse() {
+  const c = { id: uid(), name: '', holesCount: 18, tees: emptyTees(), holes: makeHoles(18, 'std'), updatedAt: Date.now() };
+  state.courses.push(c);
+  save();
+  go({ name: 'course', courseId: c.id });
 }
 
 // A round in the list, swipeable left to reveal a delete (🗑) button.
@@ -581,10 +633,7 @@ function screenRound() {
   else content.appendChild(scorecardTable(r));
 
   return h('div', null, [
-    topbar(roundLabel(r), {
-      back: () => go({ name: 'home' }),
-      action: { label: '⋯', onclick: () => go({ name: 'roundMenu', roundId: r.id }) },
-    }),
+    topbar(roundLabel(r), { back: () => go({ name: 'home' }) }),
     content,
   ]);
 }
@@ -783,26 +832,83 @@ function scorecardTable(r) {
   return wrap;
 }
 
-function screenRoundMenu() {
-  const r = currentRound();
-  if (!r) return screenHome();
-  const content = h('div', { class: 'content' }, [
-    h('div', { class: 'card' }, [
-      h('div', { class: 'section-label' }, 'Round'),
-      h('div', { style: 'font-weight:650;font-size:18px;margin-bottom:4px' }, roundLabel(r)),
-      h('div', { class: 'dim' }, `${fmtDate(r.date)} · ${holesFor(r).length} holes · ${r.players.length} players`),
+// Course editor — name, hole count, per-tee slope, and per-hole par + SI.
+// Edits write straight to the course (and save), so linked scorecards recompute.
+function screenCourse() {
+  const c = state.courses.find(x => x.id === state.view.courseId);
+  if (!c) return screenHome();
+  if (!c.tees) c.tees = emptyTees();
+  const touch = () => { c.updatedAt = Date.now(); save(); };
+
+  const content = h('div', { class: 'content' });
+
+  // Name + hole count
+  content.appendChild(h('div', { class: 'card' }, [
+    h('label', { class: 'field' }, [
+      h('span', { class: 'lbl' }, 'Course name'),
+      h('input', { type: 'text', placeholder: 'e.g. Pine Hills', value: c.name,
+        oninput: e => { c.name = e.target.value; touch(); } }),
     ]),
-    h('button', { class: 'btn secondary', style: 'margin-bottom:12px', onclick: () => go({ name: 'round', roundId: r.id }) }, 'Back to scoring'),
-    h('button', { class: 'btn danger', onclick: () => {
-      if (confirm(`Delete "${roundLabel(r)}"? This cannot be undone.`)) {
-        state.rounds = state.rounds.filter(x => x.id !== r.id);
-        save();
-        go({ name: 'home' });
-      }
-    } }, 'Delete round'),
-  ]);
+    h('label', { class: 'field', style: 'margin-bottom:0' }, [
+      h('span', { class: 'lbl' }, 'Holes'),
+      h('div', { class: 'seg' }, [9, 18].map(n =>
+        h('button', { class: c.holesCount === n ? 'on' : '', onclick: () => {
+          if (c.holesCount === n) return;
+          c.holesCount = n; c.holes = resizeHoles(c.holes, n); touch(); render();
+        } }, String(n)))),
+    ]),
+  ]));
+
+  // Slope per tee
+  content.appendChild(h('div', { class: 'card' }, [
+    h('div', { class: 'section-label' }, 'Slope per tee (55–155, 113 = neutral)'),
+    h('div', { class: 'tee-ratings' }, TEES.map(t => {
+      const td = c.tees[t.key] || (c.tees[t.key] = { slope: 113 });
+      return h('div', { class: 'tee-rating' }, [
+        h('span', { class: 'tee-dot', style: `background:${t.color}` }),
+        h('span', { class: 'tee-name' }, t.label),
+        h('input', { class: 'sl', type: 'number', inputmode: 'numeric', min: '55', max: '155', placeholder: 'slope',
+          value: td.slope ?? 113, oninput: e => { td.slope = clampSlope(e.target.value); touch(); } }),
+      ]);
+    })),
+  ]));
+
+  // Per-hole par + SI
+  const holesCard = h('div', { class: 'card' });
+  holesCard.appendChild(h('div', { class: 'section-label' }, 'Par & stroke index'));
+  holesCard.appendChild(h('div', { class: 'hole-edit head' }, [
+    h('span', null, 'Hole'), h('span', null, 'Par'), h('span', null, 'SI'),
+  ]));
+  const N = c.holes.length;
+  c.holes.forEach(hole => {
+    // Par stepper updates its value in place (no full re-render, keeps scroll).
+    const parVal = h('span', { class: 'v' }, String(hole.par));
+    const parStep = h('div', { class: 'parstep' }, [
+      h('button', { onclick: () => { hole.par = Math.max(1, hole.par - 1); parVal.textContent = String(hole.par); touch(); } }, '−'),
+      parVal,
+      h('button', { onclick: () => { hole.par = Math.min(7, hole.par + 1); parVal.textContent = String(hole.par); touch(); } }, '+'),
+    ]);
+    const siInput = h('input', { class: 'si-input', type: 'number', inputmode: 'numeric', min: '1', max: String(N),
+      value: hole.si, oninput: e => {
+        let v = parseInt(e.target.value, 10);
+        if (Number.isFinite(v)) { hole.si = Math.min(N, Math.max(1, v)); touch(); }
+      } });
+    holesCard.appendChild(h('div', { class: 'hole-edit' }, [
+      h('span', { class: 'hno' }, String(hole.index)), parStep, siInput,
+    ]));
+  });
+  content.appendChild(holesCard);
+
+  content.appendChild(h('button', { class: 'btn danger', onclick: () => {
+    if (confirm(`Delete course "${c.name || 'Untitled'}"? Rounds already played keep their own copy.`)) {
+      state.courses = state.courses.filter(x => x.id !== c.id);
+      save();
+      go({ name: 'home', tab: 'courses' });
+    }
+  } }, 'Delete course'));
+
   return h('div', null, [
-    topbar('Round options', { back: () => go({ name: 'round', roundId: r.id }) }),
+    topbar(c.name || 'Course', { back: () => go({ name: 'home', tab: 'courses' }) }),
     content,
   ]);
 }
@@ -815,7 +921,7 @@ function render() {
   switch (state.view.name) {
     case 'setup': screen = screenSetup(); break;
     case 'round': screen = screenRound(); break;
-    case 'roundMenu': screen = screenRoundMenu(); break;
+    case 'course': screen = screenCourse(); break;
     case 'home':
     default: screen = screenHome(); break;
   }

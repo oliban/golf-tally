@@ -73,6 +73,23 @@ html, body {
   border-radius: 10px;
   font-weight: 700;
 }
+/* home tab buttons (My Rounds / Courses) */
+.topbar .home-tabs { display: flex; gap: 8px; flex: 1; }
+.home-tab { flex: 1; padding: 9px 12px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,.45);
+  background: transparent; color: #fff; font-weight: 700; font-size: 15px; }
+.home-tab.on { background: #fff; color: var(--green); border-color: #fff; }
+
+/* per-hole par + SI editor (course screen) */
+.hole-edit { display: grid; grid-template-columns: 40px 1fr 68px; align-items: center; gap: 12px;
+  padding: 7px 0; border-bottom: 1px solid var(--line); }
+.hole-edit.head { border-bottom: 1.5px solid var(--line); color: var(--muted); font-size: 12px;
+  text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+.hole-edit .hno { font-weight: 700; font-variant-numeric: tabular-nums; }
+.hole-edit .parstep { display: flex; align-items: center; gap: 10px; }
+.hole-edit .parstep button { width: 36px; height: 36px; border-radius: 9px; border: 1.5px solid var(--line);
+  background: #fff; color: var(--green); font-size: 20px; font-weight: 700; flex: none; }
+.hole-edit .parstep .v { min-width: 20px; text-align: center; font-weight: 750; font-variant-numeric: tabular-nums; }
+.hole-edit .si-input { width: 100%; text-align: center; padding: 9px 4px; }
 
 .content { padding: 16px 16px calc(var(--safe-bottom) + 90px); max-width: 720px; margin: 0 auto; }
 
