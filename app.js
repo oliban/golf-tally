@@ -378,7 +378,7 @@ function roundRow(r) {
   card.addEventListener('click', (e) => {
     if (moved) { e.preventDefault(); return; }   // finished a drag, not a tap
     if (open) { open = false; card.style.transition = ''; setX(0); return; }
-    go({ name: 'round', roundId: r.id });
+    go({ name: 'round', roundId: r.id, tab: 'card' });
   });
   return wrap;
 }
