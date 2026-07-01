@@ -20,7 +20,10 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* touch-action isn't inherited, so set it on every element (not just body) to
+   kill double-tap-to-zoom on inputs/buttons too. manipulation still allows
+   scrolling and pinch-zoom. Scroll containers override with pan-x/pan-y. */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
 html, body {
   margin: 0;
