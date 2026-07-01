@@ -17,8 +17,10 @@ course.
   or a full **Scorecard** table showing every hole's gross + points and the
   running totals.
 - **Remembered courses** — name a course once and its per-hole **par + SI** are
-  saved. Pick it next time to skip setup; any par/SI you tweak mid-round is
-  synced back to the saved layout.
+  saved (par, stroke index, and **slope rating**). Pick it next time to skip
+  setup; any par/SI/slope you tweak is written back to the course — and because
+  rounds read their course live, editing a course updates its existing
+  scorecards too.
 - **Real-time save** — state is written to `localStorage` on every change, so a
   reload or an accidental close never loses a stroke.
 - **Installable & offline** — web app manifest + service worker cache the shell,
@@ -29,19 +31,19 @@ course.
 ## How scoring works
 
 ```
-playingHandicap = round(HCP)        # 18 holes
-                = round(HCP / 2)     # 9 holes
-
-strokesOnHole   = floor(ph / holes) + (SI <= (ph mod holes) ? 1 : 0)
+courseHandicap  = round(HCP * slope / 113)   # 18 holes  (halved for 9)
+strokesOnHole   = floor(ch / holes) + (SI <= (ch mod holes) ? 1 : 0)
 net             = gross - strokesReceived
 points          = max(0, par - net + 2)
 ```
 
-Example: a handicap of 36 over 18 holes gives 2 strokes on every hole, so a
-gross 6 on a par 4 is a net 4 → **2 points**.
+The course **slope** (55–155, 113 = neutral) adjusts the handicap index into the
+**course handicap** each player actually plays off; the scorecard shows both
+(`HCP 18 → 21`). Example at neutral slope: a handicap of 36 over 18 holes gives 2
+strokes on every hole, so a gross 6 on a par 4 is a net 4 → **2 points**.
 
-> Best-effort Stableford: it uses handicap + stroke index only, not course
-> slope/rating, so it won't compute an official competition handicap allowance.
+> Simplified Stableford: it uses handicap index, slope, and stroke index, but
+> not course rating, so it won't compute an official competition allowance.
 
 ## Run it locally
 

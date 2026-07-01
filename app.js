@@ -1,13 +1,16 @@
 /* Golf Scorecard — a tiny client-side PWA.
  * No build step, no server. State lives in localStorage and is saved on every change.
  *
- * Scoring model (Stableford, best-effort — no course slope/rating):
+ * Scoring model (Stableford):
  *   - A player receives strokes spread across the holes by Stroke Index (SI).
- *   - playingHandicap = handicap for 18 holes, handicap/2 for 9 holes.
- *   - strokesOnHole = floor(ph / holes) + (si <= (ph mod holes) ? 1 : 0)
- *     e.g. handicap 36 over 18 holes -> 2 strokes on every hole.
+ *   - courseHandicap = round(handicapIndex * slope / 113), halved for 9 holes.
+ *   - strokesOnHole = floor(ch / holes) + (si <= (ch mod holes) ? 1 : 0)
+ *     e.g. course handicap 36 over 18 holes -> 2 strokes on every hole.
  *   - net = gross - strokesReceived
  *   - points = max(0, par - net + 2)   (net par = 2 pts, net bogey = 1, net birdie = 3, ...)
+ *
+ * Courses (par/SI/slope) are the source of truth: a round reads them live via
+ * holesFor()/slopeFor(), so editing a course updates its existing scorecards.
  */
 
 const STORE_KEY = 'golf.scorecard.v1';
@@ -38,13 +41,23 @@ function uid() {
 
 /* ----------------------------- scoring ----------------------------- */
 
-function playingHandicap(handicap, holesCount) {
-  const h = Number(handicap) || 0;
-  return holesCount === 9 ? Math.round(h / 2) : Math.round(h);
+// Course handicap = the strokes a player actually plays off here, adjusting the
+// handicap index by the course slope (113 = neutral). Halved over 9 holes.
+function courseHandicap(handicapIndex, holesCount, slope) {
+  const h = Number(handicapIndex) || 0;
+  const s = Number(slope) || 113;
+  const ch = h * (s / 113);
+  return holesCount === 9 ? Math.round(ch / 2) : Math.round(ch);
 }
 
-function strokesReceived(handicap, si, holesCount) {
-  const ph = playingHandicap(handicap, holesCount);
+// Slope ratings run 55–155; 113 is the neutral value (no adjustment).
+function clampSlope(v) {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) ? Math.min(155, Math.max(55, n)) : 113;
+}
+
+function strokesReceived(handicapIndex, si, holesCount, slope) {
+  const ph = courseHandicap(handicapIndex, holesCount, slope);
   if (ph <= 0 || !si) return 0;
   const base = Math.floor(ph / holesCount);
   const remainder = ph % holesCount;
@@ -66,14 +79,31 @@ function ptsClass(pts) {
   return 'p' + pts; // p1, p2, p3
 }
 
+// A round reads its par/SI/slope live from the linked course so edits to the
+// course (layout or slope) show up on existing scorecards. Falls back to the
+// round's own frozen copy when there is no course (or it was deleted).
+function roundCourse(round) {
+  return round.courseId ? state.courses.find(c => c.id === round.courseId) : null;
+}
+function holesFor(round) {
+  const c = roundCourse(round);
+  return (c && c.holes) || round.holes;
+}
+function slopeFor(round) {
+  const c = roundCourse(round);
+  return (c && c.slope) || round.slope || 113;
+}
+
 function playerTotals(round, player) {
+  const holes = holesFor(round);
+  const slope = slopeFor(round);
   let points = 0, gross = 0, played = 0;
-  for (const hole of round.holes) {
+  for (const hole of holes) {
     const g = round.scores[player.id]?.[hole.index];
     if (g == null) continue;
     played++;
     gross += g;
-    const sr = strokesReceived(player.handicap, hole.si, round.holes.length);
+    const sr = strokesReceived(player.handicap, hole.si, holes.length, slope);
     points += holePoints(g, hole.par, sr);
   }
   return { points, gross, played };
@@ -83,16 +113,6 @@ function leaderboard(round) {
   return round.players
     .map(p => ({ player: p, ...playerTotals(round, p) }))
     .sort((a, b) => b.points - a.points || a.gross - b.gross);
-}
-
-// Persist a hole's par/SI back to the round's linked course, so the corrected
-// layout is remembered for the next round on that course.
-function syncCourseHole(round, hole) {
-  if (!round.courseId) return;
-  const c = state.courses.find(x => x.id === round.courseId);
-  if (!c) return;
-  const ch = c.holes.find(x => x.index === hole.index);
-  if (ch) { ch.par = hole.par; ch.si = hole.si; c.updatedAt = Date.now(); }
 }
 
 /* ----------------------------- course presets ----------------------------- */
@@ -202,7 +222,7 @@ function screenHome() {
       content.appendChild(h('div', { class: 'card tappable round-card', onclick: () => go({ name: 'round', roundId: r.id }) }, [
         h('div', { class: 'meta' }, [
           h('div', { class: 'title' }, roundLabel(r)),
-          h('div', { class: 'sub' }, `${fmtDate(r.date)} · ${r.holes.length} holes · ${r.players.length} player${r.players.length > 1 ? 's' : ''}`),
+          h('div', { class: 'sub' }, `${fmtDate(r.date)} · ${holesFor(r).length} holes · ${r.players.length} player${r.players.length > 1 ? 's' : ''}`),
         ]),
         top ? h('div', { class: 'lead' }, [
           h('strong', null, String(top.points)),
@@ -240,6 +260,7 @@ function startNewRound() {
       preset: 'flat',
       courseId: null,      // links to a saved course layout, if chosen
       courseName: '',      // name for selecting/creating a course
+      slope: 113,          // slope for a newly-created course (neutral default)
       players,
     },
   });
@@ -288,6 +309,19 @@ function screenSetup() {
     h('input', { type: 'text', placeholder: 'e.g. Pine Hills', value: d.courseName,
       oninput: e => { d.courseName = e.target.value; d.courseId = null; } }),
   ]));
+  // Slope (only relevant once there's a course). Editing a saved course's slope
+  // writes straight to the course, so existing scorecards for it recompute.
+  if (selected || d.courseName.trim()) {
+    courseCard.appendChild(h('label', { class: 'field', style: 'margin:12px 0 0' }, [
+      h('span', { class: 'lbl' }, 'Slope rating (55–155, 113 = neutral)'),
+      h('input', { type: 'number', inputmode: 'numeric', min: '55', max: '155', placeholder: '113',
+        value: selected ? (selected.slope || 113) : (d.slope ?? 113),
+        oninput: e => {
+          if (selected) { selected.slope = clampSlope(e.target.value); selected.updatedAt = Date.now(); save(); }
+          else { d.slope = e.target.value; }
+        } }),
+    ]));
+  }
   if (!selected) {
     courseCard.appendChild(h('div', { class: 'field', style: 'margin:12px 0 0' }, [
       h('span', { class: 'lbl' }, 'Starting par template'),
@@ -368,17 +402,18 @@ function commitNewRound() {
   let holes, courseName = '';
   if (courseId) {
     const c = state.courses.find(x => x.id === courseId);
-    holes = c.holes.map(hh => ({ ...hh })); // copy so the round can be edited independently
+    holes = c.holes.map(hh => ({ ...hh })); // frozen fallback if the course is later deleted
     courseName = c.name;
   } else {
     holes = makeHoles(d.holesCount, d.preset);
     if (typed) {
-      const c = { id: uid(), name: typed, holesCount: d.holesCount, holes: holes.map(hh => ({ ...hh })), updatedAt: Date.now() };
+      const c = { id: uid(), name: typed, holesCount: d.holesCount, slope: clampSlope(d.slope), holes: holes.map(hh => ({ ...hh })), updatedAt: Date.now() };
       state.courses.push(c);
       courseId = c.id;
       courseName = c.name;
     }
   }
+  const slopeSnapshot = courseId ? (state.courses.find(c => c.id === courseId)?.slope || 113) : 113;
 
   const round = {
     id: d.id,
@@ -386,6 +421,7 @@ function commitNewRound() {
     courseId: courseId || null,
     courseName,
     holes,
+    slope: slopeSnapshot,
     players: named,
     scores: Object.fromEntries(named.map(p => [p.id, {}])),
     currentHole: 1,
@@ -438,9 +474,11 @@ function screenRound() {
 }
 
 function holeEntry(r) {
-  const N = r.holes.length;
+  const holes = holesFor(r);
+  const slope = slopeFor(r);
+  const N = holes.length;
   let cur = Math.min(Math.max(r.currentHole || 1, 1), N);
-  const hole = r.holes[cur - 1];
+  const hole = holes[cur - 1];
   const box = h('div');
 
   function setHole(n) { r.currentHole = Math.min(Math.max(n, 1), N); r.updatedAt = Date.now(); save(); go(state.view); }
@@ -456,9 +494,16 @@ function holeEntry(r) {
   ]));
 
   // Editable par + stroke index for this hole. Steppers (not text inputs) so
-  // editing is one-tap on mobile and never loses focus. Changes are saved back
-  // to the linked course so you don't re-enter them next round.
-  function commitHoleMeta() { r.updatedAt = Date.now(); syncCourseHole(r, hole); save(); go(state.view); }
+  // editing is one-tap on mobile and never loses focus. `hole` is the linked
+  // course's own object (via holesFor), so edits persist to the course and
+  // show up on every scorecard for it.
+  function commitHoleMeta() {
+    r.updatedAt = Date.now();
+    const c = roundCourse(r);
+    if (c) c.updatedAt = Date.now();
+    save();
+    go(state.view);
+  }
   // `kind` ('par' | 'si') drives the colour coding so these course-setup
   // controls are easy to tell apart from the green player-score steppers.
   function metaStepper(label, kind, value, dec, inc) {
@@ -481,7 +526,8 @@ function holeEntry(r) {
   // One row per player
   r.players.forEach(p => {
     const g = r.scores[p.id][cur] ?? null;
-    const sr = strokesReceived(p.handicap, hole.si, N);
+    const sr = strokesReceived(p.handicap, hole.si, N, slope);
+    const ch = courseHandicap(p.handicap, N, slope);
     const pts = holePoints(g, hole.par, sr);
 
     const valEl = h('div', { class: 'val' + (g == null ? ' blank' : '') }, g == null ? '–' : String(g));
@@ -505,7 +551,7 @@ function holeEntry(r) {
       h('div', { class: 'who' }, [
         h('div', { class: 'nm' }, p.name),
         h('div', { class: 'det' }, [
-          `HCP ${p.handicap} · `,
+          `HCP ${p.handicap} · plays ${ch} · `,
           h('span', { class: 'dot' }, sr > 0 ? `+${sr} stroke${sr > 1 ? 's' : ''}` : 'no stroke'),
         ]),
       ]),
@@ -549,28 +595,30 @@ function refreshLeader(r) {
 }
 
 function scorecardTable(r) {
-  const N = r.holes.length;
+  const holes = holesFor(r);
+  const slope = slopeFor(r);
+  const N = holes.length;
   const wrap = h('div', { class: 'scroll-x' });
   const tbl = h('table', { class: 'card-tbl' });
 
-  // Head
+  // Head — name, handicap index, and the course handicap they play off here.
   const thead = h('thead');
   const hr = h('tr');
-  hr.appendChild(h('th', { class: 'hole-col' }, 'Hole'));
+  hr.appendChild(h('th', { class: 'hole-col' }, `Hole · slope ${slope}`));
   r.players.forEach(p => hr.appendChild(h('th', null, [
     h('div', { class: 'ph-name' }, p.name.split(' ')[0]),
-    h('div', { class: 'ph-hcp' }, `HCP ${p.handicap}`),
+    h('div', { class: 'ph-hcp' }, `HCP ${p.handicap} → ${courseHandicap(p.handicap, N, slope)}`),
   ])));
   thead.appendChild(hr);
   tbl.appendChild(thead);
 
   const tbody = h('tbody');
-  r.holes.forEach(hole => {
+  holes.forEach(hole => {
     const tr = h('tr');
     tr.appendChild(h('td', { class: 'hole-col' }, `${hole.index} · par ${hole.par}`));
     r.players.forEach(p => {
       const g = r.scores[p.id]?.[hole.index];
-      const sr = strokesReceived(p.handicap, hole.si, N);
+      const sr = strokesReceived(p.handicap, hole.si, N, slope);
       const pts = holePoints(g ?? null, hole.par, sr);
       tr.appendChild(h('td', null, g == null
         ? h('span', { class: 'dim' }, '–')
@@ -616,7 +664,7 @@ function screenRoundMenu() {
     h('div', { class: 'card' }, [
       h('div', { class: 'section-label' }, 'Round'),
       h('div', { style: 'font-weight:650;font-size:18px;margin-bottom:4px' }, roundLabel(r)),
-      h('div', { class: 'dim' }, `${fmtDate(r.date)} · ${r.holes.length} holes · ${r.players.length} players`),
+      h('div', { class: 'dim' }, `${fmtDate(r.date)} · ${holesFor(r).length} holes · ${r.players.length} players`),
     ]),
     h('button', { class: 'btn secondary', style: 'margin-bottom:12px', onclick: () => go({ name: 'round', roundId: r.id }) }, 'Back to scoring'),
     h('button', { class: 'btn danger', onclick: () => {
