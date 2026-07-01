@@ -731,7 +731,7 @@ function scorecardTable(r) {
         h('span', { class: 'tee-dot', style: `background:${tee.color}`, title: tee.label + ' tee' }),
         p.name.split(' ')[0],
       ]),
-      h('div', { class: 'ph-hcp' }, `HCP ${p.handicap} → +${playerCourseHandicap(r, p)} strokes`),
+      h('div', { class: 'ph-hcp' }, `HCP ${p.handicap} +${playerCourseHandicap(r, p)} strokes`),
     ]));
   });
   thead.appendChild(hr);
