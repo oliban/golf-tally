@@ -693,7 +693,6 @@ function holeEntry(r) {
     const td = teeDataForPlayer(r, p);
     const g = r.scores[p.id][cur] ?? null;
     const sr = strokesReceived(p.handicap, hole.si, N, td.slope);
-    const ch = playerCourseHandicap(r, p);
     const pts = holePoints(g, hole.par, sr);
 
     const valEl = h('div', { class: 'val' + (g == null ? ' blank' : '') }, g == null ? '–' : String(g));
@@ -720,7 +719,7 @@ function holeEntry(r) {
           p.name,
         ]),
         h('div', { class: 'det' }, [
-          `HCP ${p.handicap} · plays ${ch} · `,
+          `HCP ${p.handicap} · `,
           h('span', { class: 'dot' }, sr > 0 ? `+${sr} stroke${sr > 1 ? 's' : ''}` : 'no stroke'),
         ]),
       ]),
