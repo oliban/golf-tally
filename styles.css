@@ -106,6 +106,15 @@ button { font-family: inherit; cursor: pointer; }
 }
 .card.tappable:active { background: #fafbfa; }
 
+/* swipe-to-delete row on My Rounds */
+.swipe-row { position: relative; overflow: hidden; border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06); margin-bottom: 14px; }
+.swipe-row .swipe-delete { position: absolute; top: 0; right: 0; bottom: 0; width: 76px; border: none;
+  background: var(--danger); color: #fff; font-size: 24px; display: flex; align-items: center;
+  justify-content: center; }
+.swipe-row .swipe-content { position: relative; z-index: 1; margin-bottom: 0; border-radius: 0;
+  box-shadow: none; touch-action: pan-y; transition: transform .18s ease; will-change: transform; }
+
 .round-card { display: flex; align-items: center; gap: 12px; }
 .round-card .meta { flex: 1; min-width: 0; }
 .round-card .meta .title { font-weight: 650; font-size: 17px; margin-bottom: 3px; }
