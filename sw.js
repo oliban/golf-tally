@@ -1,11 +1,12 @@
 /* Offline cache for the course, but network-first so an online launch always
  * gets the latest app. Falls back to the cache (and the app shell) when there's
  * no signal. Bump CACHE only to force a hard reset of cached assets. */
-const CACHE = 'golf-v3';
+const CACHE = 'golf-v4';
 const ASSETS = [
   '.',
   'index.html',
   'styles.css',
+  'courses.js',
   'app.js',
   'manifest.webmanifest',
   'icons/icon.svg',

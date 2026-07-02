@@ -1,0 +1,2188 @@
+// Bundled course catalog — AUTO-GENERATED from courses/gothenburg.json.
+// Do not edit by hand. Regenerate with:  node scripts/gen-courses.js
+// Loaded by index.html before app.js; seeded into the course list on first run.
+globalThis.BUNDLED_COURSES = [
+  {
+    "name": "Göteborgs GK",
+    "holesCount": 18,
+    "region": "Västra Götaland",
+    "city": "Hovås",
+    "location": {
+      "lat": 57.6115165,
+      "lng": 11.9284343
+    },
+    "access": "greenfee",
+    "maxHcp": 36,
+    "greenFee": {
+      "min": 950,
+      "max": 1050,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 126
+      },
+      "red": {
+        "slope": 126
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 3,
+        "si": 9,
+        "len": {
+          "yellow": 195,
+          "red": 173
+        }
+      },
+      {
+        "index": 2,
+        "par": 4,
+        "si": 13,
+        "len": {
+          "yellow": 279,
+          "red": 266
+        }
+      },
+      {
+        "index": 3,
+        "par": 5,
+        "si": 3,
+        "len": {
+          "yellow": 407,
+          "red": 350
+        }
+      },
+      {
+        "index": 4,
+        "par": 3,
+        "si": 17,
+        "len": {
+          "yellow": 107,
+          "red": 96
+        }
+      },
+      {
+        "index": 5,
+        "par": 4,
+        "si": 7,
+        "len": {
+          "yellow": 326,
+          "red": 274
+        }
+      },
+      {
+        "index": 6,
+        "par": 4,
+        "si": 1,
+        "len": {
+          "yellow": 384,
+          "red": 334
+        }
+      },
+      {
+        "index": 7,
+        "par": 3,
+        "si": 15,
+        "len": {
+          "yellow": 113,
+          "red": 104
+        }
+      },
+      {
+        "index": 8,
+        "par": 4,
+        "si": 5,
+        "len": {
+          "yellow": 300,
+          "red": 266
+        }
+      },
+      {
+        "index": 9,
+        "par": 4,
+        "si": 11,
+        "len": {
+          "yellow": 347,
+          "red": 288
+        }
+      },
+      {
+        "index": 10,
+        "par": 5,
+        "si": 2,
+        "len": {
+          "yellow": 493,
+          "red": 400
+        }
+      },
+      {
+        "index": 11,
+        "par": 5,
+        "si": 12,
+        "len": {
+          "yellow": 429,
+          "red": 387
+        }
+      },
+      {
+        "index": 12,
+        "par": 4,
+        "si": 4,
+        "len": {
+          "yellow": 335,
+          "red": 325
+        }
+      },
+      {
+        "index": 13,
+        "par": 3,
+        "si": 16,
+        "len": {
+          "yellow": 125,
+          "red": 107
+        }
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 18,
+        "len": {
+          "yellow": 240,
+          "red": 229
+        }
+      },
+      {
+        "index": 15,
+        "par": 4,
+        "si": 8,
+        "len": {
+          "yellow": 286,
+          "red": 265
+        }
+      },
+      {
+        "index": 16,
+        "par": 4,
+        "si": 6,
+        "len": {
+          "yellow": 338,
+          "red": 282
+        }
+      },
+      {
+        "index": 17,
+        "par": 3,
+        "si": 10,
+        "len": {
+          "yellow": 158,
+          "red": 136
+        }
+      },
+      {
+        "index": 18,
+        "par": 4,
+        "si": 14,
+        "len": {
+          "yellow": 259,
+          "red": 251
+        }
+      }
+    ]
+  },
+  {
+    "name": "Delsjö GK",
+    "holesCount": 18,
+    "region": "Västra Götaland",
+    "city": "Göteborg",
+    "location": {
+      "lat": 57.688416,
+      "lng": 12.02061
+    },
+    "access": "greenfee",
+    "greenFee": {
+      "min": 950,
+      "max": 1200,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 126
+      },
+      "red": {
+        "slope": 122
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 3,
+        "si": 16,
+        "len": {
+          "yellow": 113,
+          "red": 91
+        }
+      },
+      {
+        "index": 2,
+        "par": 5,
+        "si": 14,
+        "len": {
+          "yellow": 438,
+          "red": 385
+        }
+      },
+      {
+        "index": 3,
+        "par": 4,
+        "si": 6,
+        "len": {
+          "yellow": 335,
+          "red": 279
+        }
+      },
+      {
+        "index": 4,
+        "par": 3,
+        "si": 8,
+        "len": {
+          "yellow": 175,
+          "red": 126
+        }
+      },
+      {
+        "index": 5,
+        "par": 3,
+        "si": 4,
+        "len": {
+          "yellow": 163,
+          "red": 145
+        }
+      },
+      {
+        "index": 6,
+        "par": 4,
+        "si": 2,
+        "len": {
+          "yellow": 352,
+          "red": 332
+        }
+      },
+      {
+        "index": 7,
+        "par": 4,
+        "si": 10,
+        "len": {
+          "yellow": 292,
+          "red": 258
+        }
+      },
+      {
+        "index": 8,
+        "par": 4,
+        "si": 12,
+        "len": {
+          "yellow": 302,
+          "red": 293
+        }
+      },
+      {
+        "index": 9,
+        "par": 5,
+        "si": 18,
+        "len": {
+          "yellow": 424,
+          "red": 316
+        }
+      },
+      {
+        "index": 10,
+        "par": 4,
+        "si": 3,
+        "len": {
+          "yellow": 348,
+          "red": 310
+        }
+      },
+      {
+        "index": 11,
+        "par": 5,
+        "si": 15,
+        "len": {
+          "yellow": 450,
+          "red": 411
+        }
+      },
+      {
+        "index": 12,
+        "par": 4,
+        "si": 9,
+        "len": {
+          "yellow": 340,
+          "red": 296
+        }
+      },
+      {
+        "index": 13,
+        "par": 3,
+        "si": 7,
+        "len": {
+          "yellow": 168,
+          "red": 146
+        }
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 13,
+        "len": {
+          "yellow": 314,
+          "red": 281
+        }
+      },
+      {
+        "index": 15,
+        "par": 4,
+        "si": 1,
+        "len": {
+          "yellow": 348,
+          "red": 314
+        }
+      },
+      {
+        "index": 16,
+        "par": 4,
+        "si": 17,
+        "len": {
+          "yellow": 317,
+          "red": 284
+        }
+      },
+      {
+        "index": 17,
+        "par": 3,
+        "si": 11,
+        "len": {
+          "yellow": 142,
+          "red": 127
+        }
+      },
+      {
+        "index": 18,
+        "par": 5,
+        "si": 5,
+        "len": {
+          "yellow": 479,
+          "red": 428
+        }
+      }
+    ]
+  },
+  {
+    "name": "Albatross GK",
+    "holesCount": 18,
+    "region": "Västra Götaland",
+    "city": "Hisings Backa",
+    "location": {
+      "lat": 57.7778,
+      "lng": 11.9556
+    },
+    "access": "greenfee",
+    "maxHcp": 144,
+    "greenFee": {
+      "min": 850,
+      "max": 950,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 138
+      },
+      "red": {
+        "slope": 133
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 4,
+        "si": 6,
+        "len": {
+          "yellow": 370,
+          "red": 330
+        }
+      },
+      {
+        "index": 2,
+        "par": 3,
+        "si": 16,
+        "len": {
+          "yellow": 130,
+          "red": 100
+        }
+      },
+      {
+        "index": 3,
+        "par": 4,
+        "si": 8,
+        "len": {
+          "yellow": 295,
+          "red": 240
+        }
+      },
+      {
+        "index": 4,
+        "par": 4,
+        "si": 4,
+        "len": {
+          "yellow": 335,
+          "red": 285
+        }
+      },
+      {
+        "index": 5,
+        "par": 3,
+        "si": 18,
+        "len": {
+          "yellow": 120,
+          "red": 105
+        }
+      },
+      {
+        "index": 6,
+        "par": 4,
+        "si": 10,
+        "len": {
+          "yellow": 315,
+          "red": 275
+        }
+      },
+      {
+        "index": 7,
+        "par": 5,
+        "si": 2,
+        "len": {
+          "yellow": 510,
+          "red": 435
+        }
+      },
+      {
+        "index": 8,
+        "par": 5,
+        "si": 12,
+        "len": {
+          "yellow": 450,
+          "red": 370
+        }
+      },
+      {
+        "index": 9,
+        "par": 4,
+        "si": 14,
+        "len": {
+          "yellow": 265,
+          "red": 215
+        }
+      },
+      {
+        "index": 10,
+        "par": 3,
+        "si": 13,
+        "len": {
+          "yellow": 120,
+          "red": 110
+        }
+      },
+      {
+        "index": 11,
+        "par": 4,
+        "si": 3,
+        "len": {
+          "yellow": 360,
+          "red": 285
+        }
+      },
+      {
+        "index": 12,
+        "par": 4,
+        "si": 11,
+        "len": {
+          "yellow": 275,
+          "red": 250
+        }
+      },
+      {
+        "index": 13,
+        "par": 4,
+        "si": 15,
+        "len": {
+          "yellow": 240,
+          "red": 180
+        }
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 9,
+        "len": {
+          "yellow": 345,
+          "red": 300
+        }
+      },
+      {
+        "index": 15,
+        "par": 4,
+        "si": 1,
+        "len": {
+          "yellow": 350,
+          "red": 290
+        }
+      },
+      {
+        "index": 16,
+        "par": 3,
+        "si": 17,
+        "len": {
+          "yellow": 135,
+          "red": 105
+        }
+      },
+      {
+        "index": 17,
+        "par": 5,
+        "si": 5,
+        "len": {
+          "yellow": 465,
+          "red": 385
+        }
+      },
+      {
+        "index": 18,
+        "par": 4,
+        "si": 7,
+        "len": {
+          "yellow": 355,
+          "red": 315
+        }
+      }
+    ]
+  },
+  {
+    "name": "Hills Golf & Sports Club",
+    "holesCount": 18,
+    "region": "Västra Götaland",
+    "city": "Mölndal",
+    "location": {
+      "lat": 57.628998,
+      "lng": 12.0134
+    },
+    "access": "pay-and-play",
+    "greenFee": {
+      "min": 900,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 132
+      },
+      "red": {
+        "slope": 124
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 5,
+        "si": 15,
+        "len": {
+          "yellow": 428,
+          "red": 375
+        }
+      },
+      {
+        "index": 2,
+        "par": 4,
+        "si": 5,
+        "len": {
+          "yellow": 334,
+          "red": 267
+        }
+      },
+      {
+        "index": 3,
+        "par": 5,
+        "si": 7,
+        "len": {
+          "yellow": 479,
+          "red": 408
+        }
+      },
+      {
+        "index": 4,
+        "par": 4,
+        "si": 3,
+        "len": {
+          "yellow": 321,
+          "red": 267
+        }
+      },
+      {
+        "index": 5,
+        "par": 3,
+        "si": 13,
+        "len": {
+          "yellow": 123,
+          "red": 98
+        }
+      },
+      {
+        "index": 6,
+        "par": 3,
+        "si": 17,
+        "len": {
+          "yellow": 141,
+          "red": 116
+        }
+      },
+      {
+        "index": 7,
+        "par": 4,
+        "si": 9,
+        "len": {
+          "yellow": 323,
+          "red": 252
+        }
+      },
+      {
+        "index": 8,
+        "par": 5,
+        "si": 1,
+        "len": {
+          "yellow": 494,
+          "red": 411
+        }
+      },
+      {
+        "index": 9,
+        "par": 4,
+        "si": 11,
+        "len": {
+          "yellow": 331,
+          "red": 298
+        }
+      },
+      {
+        "index": 10,
+        "par": 3,
+        "si": 12,
+        "len": {
+          "yellow": 130,
+          "red": 120
+        }
+      },
+      {
+        "index": 11,
+        "par": 4,
+        "si": 4,
+        "len": {
+          "yellow": 345,
+          "red": 271
+        }
+      },
+      {
+        "index": 12,
+        "par": 4,
+        "si": 14,
+        "len": {
+          "yellow": 227,
+          "red": 206
+        }
+      },
+      {
+        "index": 13,
+        "par": 3,
+        "si": 18,
+        "len": {
+          "yellow": 121,
+          "red": 88
+        }
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 2,
+        "len": {
+          "yellow": 346,
+          "red": 283
+        }
+      },
+      {
+        "index": 15,
+        "par": 3,
+        "si": 10,
+        "len": {
+          "yellow": 136,
+          "red": 112
+        }
+      },
+      {
+        "index": 16,
+        "par": 4,
+        "si": 16,
+        "len": {
+          "yellow": 309,
+          "red": 254
+        }
+      },
+      {
+        "index": 17,
+        "par": 4,
+        "si": 6,
+        "len": {
+          "yellow": 335,
+          "red": 309
+        }
+      },
+      {
+        "index": 18,
+        "par": 5,
+        "si": 8,
+        "len": {
+          "yellow": 438,
+          "red": 366
+        }
+      }
+    ]
+  },
+  {
+    "name": "Forsgårdens GK",
+    "holesCount": 18,
+    "region": "Halland",
+    "city": "Kungsbacka",
+    "location": {
+      "lat": 57.4947146,
+      "lng": 12.0989596
+    },
+    "access": "greenfee",
+    "maxHcp": 54,
+    "greenFee": {
+      "min": 750,
+      "max": 950,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 134
+      },
+      "red": {
+        "slope": 121
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 4,
+        "si": 8
+      },
+      {
+        "index": 2,
+        "par": 3,
+        "si": 6
+      },
+      {
+        "index": 3,
+        "par": 4,
+        "si": 16
+      },
+      {
+        "index": 4,
+        "par": 5,
+        "si": 2
+      },
+      {
+        "index": 5,
+        "par": 3,
+        "si": 10
+      },
+      {
+        "index": 6,
+        "par": 4,
+        "si": 18
+      },
+      {
+        "index": 7,
+        "par": 5,
+        "si": 14
+      },
+      {
+        "index": 8,
+        "par": 4,
+        "si": 12
+      },
+      {
+        "index": 9,
+        "par": 4,
+        "si": 4
+      },
+      {
+        "index": 10,
+        "par": 3,
+        "si": 11
+      },
+      {
+        "index": 11,
+        "par": 5,
+        "si": 13
+      },
+      {
+        "index": 12,
+        "par": 4,
+        "si": 3
+      },
+      {
+        "index": 13,
+        "par": 3,
+        "si": 17
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 9
+      },
+      {
+        "index": 15,
+        "par": 4,
+        "si": 1
+      },
+      {
+        "index": 16,
+        "par": 4,
+        "si": 15
+      },
+      {
+        "index": 17,
+        "par": 5,
+        "si": 5
+      },
+      {
+        "index": 18,
+        "par": 4,
+        "si": 7
+      }
+    ]
+  },
+  {
+    "name": "Öijared GK (Gamla)",
+    "holesCount": 18,
+    "region": "Västra Götaland",
+    "city": "Floda",
+    "location": {
+      "lat": 57.85353,
+      "lng": 12.39579
+    },
+    "access": "greenfee",
+    "maxHcp": 36,
+    "tees": {
+      "yellow": {
+        "slope": 134
+      },
+      "red": {
+        "slope": 130
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 5,
+        "si": 9,
+        "len": {
+          "yellow": 490,
+          "red": 430
+        }
+      },
+      {
+        "index": 2,
+        "par": 4,
+        "si": 13,
+        "len": {
+          "yellow": 295,
+          "red": 260
+        }
+      },
+      {
+        "index": 3,
+        "par": 3,
+        "si": 7,
+        "len": {
+          "yellow": 145,
+          "red": 115
+        }
+      },
+      {
+        "index": 4,
+        "par": 4,
+        "si": 3,
+        "len": {
+          "yellow": 285,
+          "red": 255
+        }
+      },
+      {
+        "index": 5,
+        "par": 4,
+        "si": 1,
+        "len": {
+          "yellow": 370,
+          "red": 310
+        }
+      },
+      {
+        "index": 6,
+        "par": 5,
+        "si": 15,
+        "len": {
+          "yellow": 480,
+          "red": 440
+        }
+      },
+      {
+        "index": 7,
+        "par": 4,
+        "si": 5,
+        "len": {
+          "yellow": 340,
+          "red": 275
+        }
+      },
+      {
+        "index": 8,
+        "par": 3,
+        "si": 17,
+        "len": {
+          "yellow": 140,
+          "red": 115
+        }
+      },
+      {
+        "index": 9,
+        "par": 4,
+        "si": 11,
+        "len": {
+          "yellow": 345,
+          "red": 295
+        }
+      },
+      {
+        "index": 10,
+        "par": 4,
+        "si": 10,
+        "len": {
+          "yellow": 330,
+          "red": 285
+        }
+      },
+      {
+        "index": 11,
+        "par": 5,
+        "si": 16,
+        "len": {
+          "yellow": 515,
+          "red": 455
+        }
+      },
+      {
+        "index": 12,
+        "par": 3,
+        "si": 18,
+        "len": {
+          "yellow": 107,
+          "red": 107
+        }
+      },
+      {
+        "index": 13,
+        "par": 4,
+        "si": 6,
+        "len": {
+          "yellow": 360,
+          "red": 315
+        }
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 8,
+        "len": {
+          "yellow": 290,
+          "red": 260
+        }
+      },
+      {
+        "index": 15,
+        "par": 4,
+        "si": 2,
+        "len": {
+          "yellow": 395,
+          "red": 340
+        }
+      },
+      {
+        "index": 16,
+        "par": 3,
+        "si": 14,
+        "len": {
+          "yellow": 135,
+          "red": 115
+        }
+      },
+      {
+        "index": 17,
+        "par": 5,
+        "si": 4,
+        "len": {
+          "yellow": 495,
+          "red": 430
+        }
+      },
+      {
+        "index": 18,
+        "par": 4,
+        "si": 12,
+        "len": {
+          "yellow": 270,
+          "red": 240
+        }
+      }
+    ]
+  },
+  {
+    "name": "Mölndals GK",
+    "holesCount": 18,
+    "region": "Västra Götaland",
+    "city": "Lindome",
+    "location": {
+      "lat": 57.585037,
+      "lng": 12.117362
+    },
+    "access": "greenfee",
+    "greenFee": {
+      "min": 600,
+      "max": 700,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 134
+      },
+      "red": {
+        "slope": 128
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 4,
+        "si": 13,
+        "len": {
+          "yellow": 315,
+          "red": 237
+        }
+      },
+      {
+        "index": 2,
+        "par": 5,
+        "si": 3,
+        "len": {
+          "yellow": 500,
+          "red": 396
+        }
+      },
+      {
+        "index": 3,
+        "par": 3,
+        "si": 17,
+        "len": {
+          "yellow": 140,
+          "red": 110
+        }
+      },
+      {
+        "index": 4,
+        "par": 4,
+        "si": 11,
+        "len": {
+          "yellow": 318,
+          "red": 276
+        }
+      },
+      {
+        "index": 5,
+        "par": 5,
+        "si": 9,
+        "len": {
+          "yellow": 437,
+          "red": 364
+        }
+      },
+      {
+        "index": 6,
+        "par": 4,
+        "si": 7,
+        "len": {
+          "yellow": 330,
+          "red": 285
+        }
+      },
+      {
+        "index": 7,
+        "par": 3,
+        "si": 15,
+        "len": {
+          "yellow": 152,
+          "red": 122
+        }
+      },
+      {
+        "index": 8,
+        "par": 4,
+        "si": 5,
+        "len": {
+          "yellow": 350,
+          "red": 308
+        }
+      },
+      {
+        "index": 9,
+        "par": 4,
+        "si": 1,
+        "len": {
+          "yellow": 259,
+          "red": 211
+        }
+      },
+      {
+        "index": 10,
+        "par": 5,
+        "si": 10,
+        "len": {
+          "yellow": 432,
+          "red": 365
+        }
+      },
+      {
+        "index": 11,
+        "par": 3,
+        "si": 16,
+        "len": {
+          "yellow": 154,
+          "red": 135
+        }
+      },
+      {
+        "index": 12,
+        "par": 4,
+        "si": 4,
+        "len": {
+          "yellow": 277,
+          "red": 252
+        }
+      },
+      {
+        "index": 13,
+        "par": 4,
+        "si": 12,
+        "len": {
+          "yellow": 320,
+          "red": 290
+        }
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 2,
+        "len": {
+          "yellow": 390,
+          "red": 323
+        }
+      },
+      {
+        "index": 15,
+        "par": 4,
+        "si": 8,
+        "len": {
+          "yellow": 338,
+          "red": 275
+        }
+      },
+      {
+        "index": 16,
+        "par": 4,
+        "si": 14,
+        "len": {
+          "yellow": 275,
+          "red": 250
+        }
+      },
+      {
+        "index": 17,
+        "par": 3,
+        "si": 18,
+        "len": {
+          "yellow": 112,
+          "red": 95
+        }
+      },
+      {
+        "index": 18,
+        "par": 5,
+        "si": 6,
+        "len": {
+          "yellow": 454,
+          "red": 387
+        }
+      }
+    ]
+  },
+  {
+    "name": "Chalmers GK",
+    "holesCount": 18,
+    "region": "Västra Götaland",
+    "city": "Landvetter",
+    "location": {
+      "lat": 57.6906,
+      "lng": 12.2701
+    },
+    "access": "greenfee",
+    "greenFee": {
+      "min": 650,
+      "max": 850,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 126
+      },
+      "red": {
+        "slope": 122
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 4,
+        "si": 6,
+        "len": {
+          "yellow": 359,
+          "red": 324
+        }
+      },
+      {
+        "index": 2,
+        "par": 3,
+        "si": 18,
+        "len": {
+          "yellow": 135,
+          "red": 113
+        }
+      },
+      {
+        "index": 3,
+        "par": 4,
+        "si": 16,
+        "len": {
+          "yellow": 302,
+          "red": 248
+        }
+      },
+      {
+        "index": 4,
+        "par": 5,
+        "si": 10,
+        "len": {
+          "yellow": 419,
+          "red": 339
+        }
+      },
+      {
+        "index": 5,
+        "par": 4,
+        "si": 12,
+        "len": {
+          "yellow": 291,
+          "red": 255
+        }
+      },
+      {
+        "index": 6,
+        "par": 5,
+        "si": 2,
+        "len": {
+          "yellow": 506,
+          "red": 457
+        }
+      },
+      {
+        "index": 7,
+        "par": 3,
+        "si": 4,
+        "len": {
+          "yellow": 187,
+          "red": 154
+        }
+      },
+      {
+        "index": 8,
+        "par": 4,
+        "si": 8,
+        "len": {
+          "yellow": 342,
+          "red": 300
+        }
+      },
+      {
+        "index": 9,
+        "par": 3,
+        "si": 14,
+        "len": {
+          "yellow": 129,
+          "red": 110
+        }
+      },
+      {
+        "index": 10,
+        "par": 4,
+        "si": 9,
+        "len": {
+          "yellow": 327,
+          "red": 300
+        }
+      },
+      {
+        "index": 11,
+        "par": 3,
+        "si": 17,
+        "len": {
+          "yellow": 177,
+          "red": 146
+        }
+      },
+      {
+        "index": 12,
+        "par": 5,
+        "si": 1,
+        "len": {
+          "yellow": 447,
+          "red": 375
+        }
+      },
+      {
+        "index": 13,
+        "par": 4,
+        "si": 11,
+        "len": {
+          "yellow": 333,
+          "red": 290
+        }
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 13,
+        "len": {
+          "yellow": 269,
+          "red": 228
+        }
+      },
+      {
+        "index": 15,
+        "par": 3,
+        "si": 5,
+        "len": {
+          "yellow": 159,
+          "red": 128
+        }
+      },
+      {
+        "index": 16,
+        "par": 4,
+        "si": 15,
+        "len": {
+          "yellow": 294,
+          "red": 272
+        }
+      },
+      {
+        "index": 17,
+        "par": 5,
+        "si": 3,
+        "len": {
+          "yellow": 483,
+          "red": 390
+        }
+      },
+      {
+        "index": 18,
+        "par": 4,
+        "si": 7,
+        "len": {
+          "yellow": 370,
+          "red": 312
+        }
+      }
+    ]
+  },
+  {
+    "name": "Lerjedalens GK",
+    "holesCount": 18,
+    "region": "Västra Götaland",
+    "city": "Göteborg",
+    "location": {
+      "lat": 57.794147,
+      "lng": 12.103368
+    },
+    "access": "greenfee",
+    "greenFee": {
+      "min": 350,
+      "max": 745,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 123
+      },
+      "red": {
+        "slope": 122
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 4,
+        "si": 4,
+        "len": {
+          "yellow": 350,
+          "red": 318
+        }
+      },
+      {
+        "index": 2,
+        "par": 4,
+        "si": 6,
+        "len": {
+          "yellow": 355,
+          "red": 310
+        }
+      },
+      {
+        "index": 3,
+        "par": 3,
+        "si": 18,
+        "len": {
+          "yellow": 122,
+          "red": 112
+        }
+      },
+      {
+        "index": 4,
+        "par": 5,
+        "si": 2,
+        "len": {
+          "yellow": 456,
+          "red": 391
+        }
+      },
+      {
+        "index": 5,
+        "par": 4,
+        "si": 12,
+        "len": {
+          "yellow": 336,
+          "red": 291
+        }
+      },
+      {
+        "index": 6,
+        "par": 3,
+        "si": 10,
+        "len": {
+          "yellow": 148,
+          "red": 138
+        }
+      },
+      {
+        "index": 7,
+        "par": 4,
+        "si": 14,
+        "len": {
+          "yellow": 322,
+          "red": 247
+        }
+      },
+      {
+        "index": 8,
+        "par": 3,
+        "si": 16,
+        "len": {
+          "yellow": 168,
+          "red": 136
+        }
+      },
+      {
+        "index": 9,
+        "par": 5,
+        "si": 8,
+        "len": {
+          "yellow": 449,
+          "red": 375
+        }
+      },
+      {
+        "index": 10,
+        "par": 4,
+        "si": 9,
+        "len": {
+          "yellow": 335,
+          "red": 258
+        }
+      },
+      {
+        "index": 11,
+        "par": 3,
+        "si": 17,
+        "len": {
+          "yellow": 129,
+          "red": 121
+        }
+      },
+      {
+        "index": 12,
+        "par": 5,
+        "si": 11,
+        "len": {
+          "yellow": 430,
+          "red": 349
+        }
+      },
+      {
+        "index": 13,
+        "par": 4,
+        "si": 5,
+        "len": {
+          "yellow": 364,
+          "red": 292
+        }
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 13,
+        "len": {
+          "yellow": 303,
+          "red": 245
+        }
+      },
+      {
+        "index": 15,
+        "par": 5,
+        "si": 3,
+        "len": {
+          "yellow": 506,
+          "red": 434
+        }
+      },
+      {
+        "index": 16,
+        "par": 5,
+        "si": 1,
+        "len": {
+          "yellow": 486,
+          "red": 436
+        }
+      },
+      {
+        "index": 17,
+        "par": 3,
+        "si": 15,
+        "len": {
+          "yellow": 136,
+          "red": 122
+        }
+      },
+      {
+        "index": 18,
+        "par": 4,
+        "si": 7,
+        "len": {
+          "yellow": 321,
+          "red": 265
+        }
+      }
+    ]
+  },
+  {
+    "name": "Gullbringa G&CC",
+    "holesCount": 18,
+    "region": "Västra Götaland",
+    "city": "Kungälv",
+    "location": {
+      "lat": 57.8825418,
+      "lng": 11.7708887
+    },
+    "access": "greenfee",
+    "greenFee": {
+      "min": 490,
+      "max": 990,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 122
+      },
+      "red": {
+        "slope": 118
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 4,
+        "si": 9,
+        "len": {
+          "yellow": 357,
+          "red": 325
+        }
+      },
+      {
+        "index": 2,
+        "par": 5,
+        "si": 5,
+        "len": {
+          "yellow": 490,
+          "red": 430
+        }
+      },
+      {
+        "index": 3,
+        "par": 3,
+        "si": 11,
+        "len": {
+          "yellow": 169,
+          "red": 149
+        }
+      },
+      {
+        "index": 4,
+        "par": 4,
+        "si": 3,
+        "len": {
+          "yellow": 364,
+          "red": 307
+        }
+      },
+      {
+        "index": 5,
+        "par": 3,
+        "si": 15,
+        "len": {
+          "yellow": 158,
+          "red": 129
+        }
+      },
+      {
+        "index": 6,
+        "par": 4,
+        "si": 17,
+        "len": {
+          "yellow": 248,
+          "red": 242
+        }
+      },
+      {
+        "index": 7,
+        "par": 5,
+        "si": 1,
+        "len": {
+          "yellow": 481,
+          "red": 382
+        }
+      },
+      {
+        "index": 8,
+        "par": 4,
+        "si": 7,
+        "len": {
+          "yellow": 333,
+          "red": 288
+        }
+      },
+      {
+        "index": 9,
+        "par": 3,
+        "si": 13,
+        "len": {
+          "yellow": 138,
+          "red": 122
+        }
+      },
+      {
+        "index": 10,
+        "par": 4,
+        "si": 10,
+        "len": {
+          "yellow": 310,
+          "red": 248
+        }
+      },
+      {
+        "index": 11,
+        "par": 3,
+        "si": 18,
+        "len": {
+          "yellow": 124,
+          "red": 104
+        }
+      },
+      {
+        "index": 12,
+        "par": 4,
+        "si": 4,
+        "len": {
+          "yellow": 321,
+          "red": 275
+        }
+      },
+      {
+        "index": 13,
+        "par": 3,
+        "si": 14,
+        "len": {
+          "yellow": 136,
+          "red": 102
+        }
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 2,
+        "len": {
+          "yellow": 369,
+          "red": 326
+        }
+      },
+      {
+        "index": 15,
+        "par": 3,
+        "si": 8,
+        "len": {
+          "yellow": 169,
+          "red": 131
+        }
+      },
+      {
+        "index": 16,
+        "par": 4,
+        "si": 16,
+        "len": {
+          "yellow": 247,
+          "red": 227
+        }
+      },
+      {
+        "index": 17,
+        "par": 4,
+        "si": 6,
+        "len": {
+          "yellow": 315,
+          "red": 270
+        }
+      },
+      {
+        "index": 18,
+        "par": 5,
+        "si": 12,
+        "len": {
+          "yellow": 407,
+          "red": 372
+        }
+      }
+    ]
+  },
+  {
+    "name": "Kungsbacka GK",
+    "holesCount": 18,
+    "region": "Halland",
+    "city": "Kungsbacka",
+    "location": {
+      "lat": 57.493543,
+      "lng": 11.985949
+    },
+    "access": "greenfee",
+    "maxHcp": 36,
+    "greenFee": {
+      "min": 900,
+      "max": 1150,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 133
+      },
+      "red": {
+        "slope": 130
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 3,
+        "si": 15,
+        "len": {
+          "yellow": 130,
+          "red": 122
+        }
+      },
+      {
+        "index": 2,
+        "par": 4,
+        "si": 7,
+        "len": {
+          "yellow": 360,
+          "red": 305
+        }
+      },
+      {
+        "index": 3,
+        "par": 5,
+        "si": 11,
+        "len": {
+          "yellow": 503,
+          "red": 442
+        }
+      },
+      {
+        "index": 4,
+        "par": 4,
+        "si": 17,
+        "len": {
+          "yellow": 308,
+          "red": 264
+        }
+      },
+      {
+        "index": 5,
+        "par": 4,
+        "si": 1,
+        "len": {
+          "yellow": 395,
+          "red": 328
+        }
+      },
+      {
+        "index": 6,
+        "par": 5,
+        "si": 9,
+        "len": {
+          "yellow": 485,
+          "red": 395
+        }
+      },
+      {
+        "index": 7,
+        "par": 3,
+        "si": 13,
+        "len": {
+          "yellow": 175,
+          "red": 140
+        }
+      },
+      {
+        "index": 8,
+        "par": 4,
+        "si": 3,
+        "len": {
+          "yellow": 370,
+          "red": 305
+        }
+      },
+      {
+        "index": 9,
+        "par": 4,
+        "si": 5,
+        "len": {
+          "yellow": 385,
+          "red": 318
+        }
+      },
+      {
+        "index": 10,
+        "par": 4,
+        "si": 6,
+        "len": {
+          "yellow": 350,
+          "red": 295
+        }
+      },
+      {
+        "index": 11,
+        "par": 4,
+        "si": 2,
+        "len": {
+          "yellow": 418,
+          "red": 357
+        }
+      },
+      {
+        "index": 12,
+        "par": 5,
+        "si": 12,
+        "len": {
+          "yellow": 489,
+          "red": 405
+        }
+      },
+      {
+        "index": 13,
+        "par": 3,
+        "si": 16,
+        "len": {
+          "yellow": 118,
+          "red": 105
+        }
+      },
+      {
+        "index": 14,
+        "par": 4,
+        "si": 10,
+        "len": {
+          "yellow": 240,
+          "red": 210
+        }
+      },
+      {
+        "index": 15,
+        "par": 4,
+        "si": 18,
+        "len": {
+          "yellow": 247,
+          "red": 232
+        }
+      },
+      {
+        "index": 16,
+        "par": 5,
+        "si": 4,
+        "len": {
+          "yellow": 489,
+          "red": 415
+        }
+      },
+      {
+        "index": 17,
+        "par": 4,
+        "si": 8,
+        "len": {
+          "yellow": 323,
+          "red": 252
+        }
+      },
+      {
+        "index": 18,
+        "par": 3,
+        "si": 14,
+        "len": {
+          "yellow": 129,
+          "red": 119
+        }
+      }
+    ]
+  },
+  {
+    "name": "Partille GK",
+    "holesCount": 18,
+    "region": "Västra Götaland",
+    "city": "Partille",
+    "location": {
+      "lat": 57.69065,
+      "lng": 12.110621
+    },
+    "access": "greenfee",
+    "greenFee": {
+      "min": 590,
+      "max": 790,
+      "currency": "SEK"
+    },
+    "tees": {
+      "yellow": {
+        "slope": 123
+      },
+      "red": {
+        "slope": 126
+      }
+    },
+    "holes": [
+      {
+        "index": 1,
+        "par": 4,
+        "si": 6,
+        "len": {
+          "yellow": 318,
+          "red": 301
+        }
+      },
+      {
+        "index": 2,
+        "par": 3,
+        "si": 14,
+        "len": {
+          "yellow": 128,
+          "red": 119
+        }
+      },
+      {
+        "index": 3,
+        "par": 5,
+        "si": 10,
+        "len": {
+          "yellow": 435,
+          "red": 380
+        }
+      },
+      {
+        "index": 4,
+        "par": 4,
+        "si": 12,
+        "len": {
+          "yellow": 295,
+          "red": 256
+        }
+      },
+      {
+        "index": 5,
+        "par": 3,
+        "si": 16,
+        "len": {
+          "yellow": 149,
+          "red": 131
+        }
+      },
+      {
+        "index": 6,
+        "par": 5,
+        "si": 4,
+        "len": {
+          "yellow": 445,
+          "red": 368
+        }
+      },
+      {
+        "index": 7,
+        "par": 3,
+        "si": 18,
+        "len": {
+          "yellow": 104,
+          "red": 96
+        }
+      },
+      {
+        "index": 8,
+        "par": 4,
+        "si": 8,
+        "len": {
+          "yellow": 397,
+          "red": 293
+        }
+      },
+      {
+        "index": 9,
+        "par": 4,
+        "si": 2,
+        "len": {
+          "yellow": 382,
+          "red": 334
+        }
+      },
+      {
+        "index": 10,
+        "par": 4,
+        "si": 17,
+        "len": {
+          "yellow": 287,
+          "red": 278
+        }
+      },
+      {
+        "index": 11,
+        "par": 4,
+        "si": 3,
+        "len": {
+          "yellow": 363,
+          "red": 299
+        }
+      },
+      {
+        "index": 12,
+        "par": 4,
+        "si": 7,
+        "len": {
+          "yellow": 325,
+          "red": 276
+        }
+      },
+      {
+        "index": 13,
+        "par": 3,
+        "si": 15,
+        "len": {
+          "yellow": 157,
+          "red": 148
+        }
+      },
+      {
+        "index": 14,
+        "par": 5,
+        "si": 1,
+        "len": {
+          "yellow": 469,
+          "red": 402
+        }
+      },
+      {
+        "index": 15,
+        "par": 4,
+        "si": 11,
+        "len": {
+          "yellow": 291,
+          "red": 260
+        }
+      },
+      {
+        "index": 16,
+        "par": 4,
+        "si": 13,
+        "len": {
+          "yellow": 291,
+          "red": 249
+        }
+      },
+      {
+        "index": 17,
+        "par": 3,
+        "si": 9,
+        "len": {
+          "yellow": 163,
+          "red": 139
+        }
+      },
+      {
+        "index": 18,
+        "par": 4,
+        "si": 5,
+        "len": {
+          "yellow": 367,
+          "red": 322
+        }
+      }
+    ]
+  }
+];

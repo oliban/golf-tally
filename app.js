@@ -38,6 +38,7 @@ let state = loadState();
 if (!state.courses) state.courses = []; // courses are remembered course layouts (par + SI)
 if (!state.rounds) state.rounds = [];
 migrateState();
+seedCatalog();
 
 // Bring older saved data up to the current shape: per-tee { slope } on
 // courses and rounds, and a tee on every player.
@@ -52,6 +53,29 @@ function migrateState() {
     if (!r.tees) r.tees = legacyTees(r);
     r.players.forEach(p => { if (!p.tee) p.tee = DEFAULT_TEE; });
   });
+}
+
+// Seed the bundled catalog (courses.js -> globalThis.BUNDLED_COURSES) into the
+// saved course list. Each bundled course is added at most once (tracked in
+// state.seededCourses), so deleting one doesn't bring it back and courses added
+// to the bundle in a later release still appear. Seeded courses are ordinary
+// editable courses tagged source:'bundled'.
+function seedCatalog() {
+  const bundled = globalThis.BUNDLED_COURSES;
+  if (!Array.isArray(bundled)) return;
+  if (!state.seededCourses) state.seededCourses = [];
+  let changed = false;
+  for (const raw of bundled) {
+    const nc = normalizeImportedCourse(raw);
+    if (!nc) continue;
+    const key = nc.name.toLowerCase() + '|' + nc.holesCount;
+    if (state.seededCourses.includes(key)) continue;   // seeded before — respect deletions/edits
+    state.seededCourses.push(key);
+    const dupe = state.courses.some(c => (c.name || '').toLowerCase() + '|' + c.holesCount === key);
+    if (!dupe) state.courses.push({ id: uid(), ...nc, source: 'bundled', updatedAt: Date.now() });
+    changed = true;
+  }
+  if (changed) save();
 }
 
 function save() {
@@ -179,6 +203,84 @@ function resizeHoles(holes, n) {
   return out;
 }
 
+/* ----------------------------- catalog ----------------------------- */
+
+// Normalise one bundled/imported course object into the native saved-course
+// shape. Lenient: blank/invalid fields fall back to sensible defaults, slope
+// defaults to 113 (neutral). Optional location/access/city/region/greenFee/
+// maxHcp and per-hole length pass through for the course list and filters.
+// Returns null when the object has no usable 9- or 18-hole layout.
+function normalizeImportedCourse(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const src = Array.isArray(raw.holes) ? raw.holes : null;
+  if (!src || (src.length !== 9 && src.length !== 18)) return null;
+  const N = src.length;
+  const holes = [];
+  for (let i = 1; i <= N; i++) {
+    const hh = src.find(x => Number(x?.index) === i) || src[i - 1] || {};
+    let par = Math.round(Number(hh.par));
+    if (!Number.isFinite(par)) par = 4;
+    let si = Math.round(Number(hh.si));
+    if (!Number.isFinite(si)) si = i;
+    const hole = { index: i, par: Math.min(7, Math.max(1, par)), si: Math.min(N, Math.max(1, si)) };
+    const ly = hh.len?.yellow, lr = hh.len?.red;   // null-guarded: Number(null) is 0, not absent
+    const lyN = ly == null ? NaN : Number(ly), lrN = lr == null ? NaN : Number(lr);
+    if (Number.isFinite(lyN) || Number.isFinite(lrN)) {
+      hole.len = { yellow: Number.isFinite(lyN) ? lyN : null, red: Number.isFinite(lrN) ? lrN : null };
+    }
+    holes.push(hole);
+  }
+  const tees = {};
+  TEES.forEach(t => {
+    const s = raw.tees?.[t.key]?.slope;
+    tees[t.key] = { slope: (s == null || s === '') ? 113 : clampSlope(s) };
+  });
+  const name = (typeof raw.name === 'string' && raw.name.trim()) ? raw.name.trim() : 'Imported course';
+  const course = { name, holesCount: N, tees, holes };
+  // Optional metadata, kept for the upcoming distance / pay-and-play filters.
+  const rl = raw.location;
+  if (rl && rl.lat != null && rl.lng != null && Number.isFinite(Number(rl.lat)) && Number.isFinite(Number(rl.lng))) {
+    course.location = { lat: Number(rl.lat), lng: Number(rl.lng) };
+  }
+  // Access is per-course: pay-and-play (walk-up, no membership), greenfee
+  // (members' club, visitors welcome by paying), or members (private). Legacy
+  // "mixed" (from clubs that run several courses) maps to greenfee.
+  const access = raw.access === 'mixed' ? 'greenfee' : raw.access;
+  if (['pay-and-play', 'greenfee', 'members'].includes(access)) course.access = access;
+  if (typeof raw.city === 'string' && raw.city.trim()) course.city = raw.city.trim();
+  if (typeof raw.region === 'string' && raw.region.trim()) course.region = raw.region.trim();
+  if (raw.maxHcp != null && Number.isFinite(Number(raw.maxHcp))) course.maxHcp = Number(raw.maxHcp);
+  if (raw.greenFee && typeof raw.greenFee === 'object') {
+    const gf = { currency: typeof raw.greenFee.currency === 'string' ? raw.greenFee.currency : 'SEK' };
+    const mn = raw.greenFee.min, mx = raw.greenFee.max;   // null-guarded like above
+    if (mn != null && Number.isFinite(Number(mn))) gf.min = Number(mn);
+    if (mx != null && Number.isFinite(Number(mx))) gf.max = Number(mx);
+    if (gf.min != null || gf.max != null) course.greenFee = gf;
+  }
+  return course;
+}
+
+/* ----------------------------- location ----------------------------- */
+
+// Great-circle distance in km between two {lat,lng} points.
+function haversineKm(a, b) {
+  const R = 6371, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+// Ask the browser for the user's location, cache it, and re-render. onDone runs
+// on success before the render (used to also flip the "near me" filter on).
+function requestLocation(onDone) {
+  if (!navigator.geolocation) { toast('Location isn’t available on this device'); return; }
+  toast('Getting your location…');
+  navigator.geolocation.getCurrentPosition(
+    pos => { state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude }; save(); if (onDone) onDone(); render(); },
+    () => toast('Could not get your location'),
+    { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
+}
+
 /* ----------------------------- navigation ----------------------------- */
 
 function go(view) {
@@ -268,15 +370,14 @@ function screenHome() {
       rounds.forEach(r => content.appendChild(roundRow(r)));
     }
   } else {
-    const courses = [...state.courses].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-    if (courses.length === 0) {
+    if (state.courses.length === 0) {
       content.appendChild(h('div', { class: 'empty' }, [
         h('div', { class: 'big' }, '🏌️'),
         h('div', null, 'No courses yet.'),
         h('div', { class: 'dim', html: 'Tap <strong>New course</strong> to add one.' }),
       ]));
     } else {
-      courses.forEach(c => content.appendChild(courseRow(c)));
+      content.appendChild(coursesBrowser());
     }
   }
 
@@ -296,14 +397,109 @@ function screenHome() {
   ]);
 }
 
-// A course in the Courses tab — tap to edit.
-function courseRow(c) {
+// Courses tab filter state — session-only (resets on reload).
+let courseFilter = { q: '', fav: false, pay: false, near: false, region: '', maxFee: 0 };
+
+// Does a course pass the active filters?
+function courseMatches(c) {
+  const f = courseFilter;
+  if (f.fav && !c.favorite) return false;
+  if (f.pay && c.access !== 'pay-and-play') return false;
+  if (f.region && c.region !== f.region) return false;
+  if (f.maxFee && !(c.greenFee && c.greenFee.min != null && c.greenFee.min <= f.maxFee)) return false;
+  if (f.q) {
+    const hay = [c.name, c.city, c.region].filter(Boolean).join(' ').toLowerCase();
+    if (!hay.includes(f.q.toLowerCase())) return false;
+  }
+  return true;
+}
+
+// Sort key: favourites first, then nearest (when "near me" is on) else by name.
+function sortCourses(rows, loc) {
+  return rows.sort((a, b) => {
+    const fav = (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0);
+    if (fav) return fav;
+    if (courseFilter.near && loc) {
+      const da = a.location ? haversineKm(loc, a.location) : Infinity;
+      const db = b.location ? haversineKm(loc, b.location) : Infinity;
+      if (da !== db) return da - db;
+    }
+    return (a.name || '').localeCompare(b.name || '');
+  });
+}
+
+// The Courses tab: search + filters over the (bundled + user) course list.
+function coursesBrowser() {
+  const regions = [...new Set(state.courses.map(c => c.region).filter(Boolean))].sort();
+  const list = h('div', { class: 'course-list' });
+
+  function renderList() {
+    const loc = (courseFilter.near && state.userLoc) ? state.userLoc : null;
+    const rows = sortCourses(state.courses.filter(courseMatches), loc);
+    list.replaceChildren();
+    if (!rows.length) { list.appendChild(h('div', { class: 'empty small' }, 'No courses match those filters.')); return; }
+    rows.forEach(c => list.appendChild(courseRow(c, loc)));
+  }
+
+  function chip(label, isOn, onToggle) {
+    const b = h('button', { class: 'chip' + (isOn() ? ' on' : ''),
+      onclick: () => { onToggle(() => { b.className = 'chip' + (isOn() ? ' on' : ''); renderList(); }); } }, label);
+    return b;
+  }
+
+  const search = h('input', { class: 'search', type: 'search', placeholder: 'Search course, city, region…',
+    value: courseFilter.q, oninput: e => { courseFilter.q = e.target.value; renderList(); } });
+
+  const favChip = chip('★ Favourites', () => courseFilter.fav, done => { courseFilter.fav = !courseFilter.fav; done(); });
+  const payChip = chip('Pay & play', () => courseFilter.pay, done => { courseFilter.pay = !courseFilter.pay; done(); });
+  const nearChip = chip('📍 Near me', () => courseFilter.near && !!state.userLoc, done => {
+    if (courseFilter.near) { courseFilter.near = false; done(); return; }
+    if (state.userLoc) { courseFilter.near = true; done(); }
+    else requestLocation(() => { courseFilter.near = true; });   // re-renders whole screen on success
+  });
+
+  const regionSel = h('select', { class: 'filter-sel', onchange: e => { courseFilter.region = e.target.value; renderList(); } },
+    [h('option', { value: '' }, 'All regions'), ...regions.map(r =>
+      h('option', { value: r, selected: courseFilter.region === r || undefined }, r))]);
+  const feeSel = h('select', { class: 'filter-sel', onchange: e => { courseFilter.maxFee = Number(e.target.value); renderList(); } },
+    [[0, 'Any price'], [500, '≤ 500 kr'], [800, '≤ 800 kr'], [1000, '≤ 1000 kr']].map(([v, l]) =>
+      h('option', { value: v, selected: courseFilter.maxFee === v || undefined }, l)));
+
+  renderList();
+  return h('div', null, [
+    h('div', { class: 'course-controls' }, [
+      search,
+      h('div', { class: 'chips filter-chips' }, [favChip, payChip, nearChip]),
+      h('div', { class: 'filter-selects' }, [regionSel, feeSel]),
+    ]),
+    list,
+  ]);
+}
+
+// A course in the Courses tab — favourite star, tags, optional distance; tap to edit.
+function courseRow(c, loc) {
   const parTotal = (c.holes || []).reduce((s, hh) => s + (Number(hh.par) || 0), 0);
-  const slopes = TEES.map(t => `${t.label[0]} ${c.tees?.[t.key]?.slope ?? 113}`).join(' · ');
-  return h('div', { class: 'card tappable round-card', onclick: () => go({ name: 'course', courseId: c.id }) }, [
+  const sub = [c.city, `${c.holesCount} holes`, `par ${parTotal}`].filter(Boolean).join(' · ');
+
+  const tags = [];
+  if (c.access === 'pay-and-play') tags.push(h('span', { class: 'tag pay' }, 'Pay & play'));
+  else if (c.access === 'greenfee') tags.push(h('span', { class: 'tag' }, 'Greenfee'));
+  if (c.greenFee && c.greenFee.min != null) {
+    const gf = c.greenFee.max && c.greenFee.max !== c.greenFee.min ? `${c.greenFee.min}–${c.greenFee.max}` : `${c.greenFee.min}`;
+    tags.push(h('span', { class: 'tag' }, `${gf} kr`));
+  }
+  if (loc && c.location) tags.push(h('span', { class: 'tag dist' }, `${haversineKm(loc, c.location).toFixed(1)} km`));
+
+  const star = h('button', { class: 'star' + (c.favorite ? ' on' : ''), 'aria-label': 'Favourite course',
+    onclick: (e) => { e.stopPropagation(); c.favorite = !c.favorite; c.updatedAt = Date.now(); save(); render(); } },
+    c.favorite ? '★' : '☆');
+
+  return h('div', { class: 'card tappable round-card course-row', onclick: () => go({ name: 'course', courseId: c.id }) }, [
+    star,
     h('div', { class: 'meta' }, [
       h('div', { class: 'title' }, c.name || 'Untitled course'),
-      h('div', { class: 'sub' }, `${c.holesCount} holes · par ${parTotal} · slope ${slopes}`),
+      h('div', { class: 'sub' }, sub),
+      tags.length ? h('div', { class: 'tags' }, tags) : null,
     ]),
     h('div', { class: 'chev' }, '›'),
   ]);
@@ -391,17 +587,14 @@ function startNewRound() {
     ? last.players.map(p => ({ id: uid(), name: p.name, handicap: String(p.handicap), tee: p.tee || DEFAULT_TEE }))
     : [{ id: uid(), name: '', handicap: '', tee: DEFAULT_TEE }];
 
-  // Seed a draft round in the setup screen.
+  // Seed a draft round in the setup screen. A course must be picked (or created)
+  // before the round can start — no more "create the course as you play".
   go({
     name: 'setup',
     draft: {
       id: uid(),
       date: new Date().toISOString().slice(0, 10),
-      holesCount: 18,
-      preset: 'flat',
-      courseId: null,      // links to a saved course layout, if chosen
-      courseName: '',      // name for selecting/creating a course
-      tees: emptyTees(),   // per-tee { slope } for a newly-created course
+      courseId: null,      // the chosen saved course (required to start)
       players,
     },
   });
@@ -411,23 +604,19 @@ function screenSetup() {
   const d = state.view.draft;
   const content = h('div', { class: 'content' });
 
-  // Date + holes (the round name is derived from the course automatically)
+  // Date only — hole count now comes from the chosen course.
   const card1 = h('div', { class: 'card' }, [
-    h('label', { class: 'field' }, [
+    h('label', { class: 'field', style: 'margin-bottom:0' }, [
       h('span', { class: 'lbl' }, 'Date'),
       h('input', { type: 'date', value: d.date, oninput: e => { d.date = e.target.value; } }),
     ]),
-    h('label', { class: 'field', style: 'margin-bottom:0' }, [
-      h('span', { class: 'lbl' }, 'Holes'),
-      h('div', { class: 'seg' }, [9, 18].map(n =>
-        h('button', { class: d.holesCount === n ? 'on' : '', onclick: () => { d.holesCount = n; d.courseId = null; rerenderSetup(); } }, String(n)))),
-    ]),
   ]);
 
-  // Course — a remembered layout of par + stroke index, reusable across rounds.
-  // Show every saved course regardless of the hole count picked above; choosing
-  // one switches the round to that course's hole count.
-  const savedCourses = state.courses;
+  // Course — select-only. A round must be backed by a saved course; if it isn't
+  // there yet, create it (or import a pack on the Courses tab) first.
+  // Favourites first, then alphabetical, so starred courses are quick to pick.
+  const savedCourses = [...state.courses].sort((a, b) =>
+    ((b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)) || (a.name || '').localeCompare(b.name || ''));
   const selected = d.courseId ? state.courses.find(c => c.id === d.courseId) : null;
   const courseCard = h('div', { class: 'card' });
   courseCard.appendChild(h('div', { class: 'section-label' }, 'Course'));
@@ -436,54 +625,19 @@ function screenSetup() {
     savedCourses.forEach(c => {
       chips.appendChild(h('button', {
         class: 'chip' + (d.courseId === c.id ? ' on' : ''),
-        onclick: () => {
-          if (d.courseId === c.id) { d.courseId = null; d.courseName = ''; }
-          else { d.courseId = c.id; d.courseName = c.name; d.holesCount = c.holesCount; }
-          rerenderSetup();
-        },
-      }, `${c.name} · ${c.holesCount}h · par ${c.holes.reduce((s, hh) => s + hh.par, 0)}`));
+        onclick: () => { d.courseId = d.courseId === c.id ? null : c.id; rerenderSetup(); },
+      }, `${c.favorite ? '★ ' : ''}${c.name || 'Untitled'} · ${c.holesCount}h · par ${c.holes.reduce((s, hh) => s + hh.par, 0)}`));
     });
     courseCard.appendChild(chips);
+  } else {
+    courseCard.appendChild(h('div', { class: 'hint', style: 'margin:0 2px' },
+      'No saved courses yet. Create one (or import a pack on the Courses tab) to start a round.'));
   }
-  courseCard.appendChild(h('label', { class: 'field', style: 'margin:' + (savedCourses.length ? '12px' : '0') + ' 0 0' }, [
-    h('span', { class: 'lbl' }, selected ? 'Using saved course' : 'New course name (optional)'),
-    h('input', { type: 'text', placeholder: 'e.g. Pine Hills', value: d.courseName,
-      oninput: e => { d.courseName = e.target.value; d.courseId = null; } }),
-  ]));
-  // Per-tee slope (only relevant once there's a course). Editing a saved
-  // course writes straight to it, so its scorecards recompute.
-  if (selected || d.courseName.trim()) {
-    const tees = selected ? (selected.tees || (selected.tees = emptyTees())) : d.tees;
-    const touch = () => { if (selected) { selected.updatedAt = Date.now(); save(); } };
-    courseCard.appendChild(h('div', { class: 'field', style: 'margin:12px 0 0' }, [
-      h('span', { class: 'lbl' }, 'Slope per tee (55–155, 113 = neutral)'),
-      h('div', { class: 'tee-ratings' }, TEES.map(t => {
-        const td = tees[t.key] || (tees[t.key] = { slope: 113 });
-        return h('div', { class: 'tee-rating' }, [
-          h('span', { class: 'tee-dot', style: `background:${t.color}` }),
-          h('span', { class: 'tee-name' }, t.label),
-          h('input', { class: 'sl', type: 'number', inputmode: 'numeric', min: '55', max: '155', placeholder: 'slope',
-            value: td.slope ?? 113,
-            oninput: e => { td.slope = selected ? clampSlope(e.target.value) : e.target.value; touch(); } }),
-        ]);
-      })),
-    ]));
-  }
-  if (!selected) {
-    courseCard.appendChild(h('div', { class: 'field', style: 'margin:12px 0 0' }, [
-      h('span', { class: 'lbl' }, 'Starting par template'),
-      h('div', { class: 'seg' }, [
-        h('button', { class: d.preset === 'flat' ? 'on' : '', onclick: () => { d.preset = 'flat'; rerenderSetup(); } }, 'All par 4'),
-        h('button', { class: d.preset === 'std' ? 'on' : '', onclick: () => { d.preset = 'std'; rerenderSetup(); } }, 'Standard 72'),
-      ]),
-    ]));
-  }
+  courseCard.appendChild(h('button', { class: 'btn ghost setup-create', onclick: () => createCourseFromSetup() }, '+ Create course'));
   courseCard.appendChild(h('div', { class: 'hint', style: 'margin:10px 2px 0' },
     selected
-      ? `Pars from "${selected.name}" are loaded. Any par/SI you tweak while playing is saved back to it for next time.`
-      : (d.courseName.trim()
-        ? `New course "${d.courseName.trim()}" will be saved as you play — next round just tap it to reuse these pars.`
-        : 'Tip: name the course and your per-hole pars are remembered, so you only set them once.')));
+      ? `Playing "${selected.name || 'Untitled'}" — ${selected.holesCount} holes, par ${selected.holes.reduce((s, hh) => s + hh.par, 0)}. Edit its pars/slope on the Courses tab.`
+      : 'Pick a course above to start, or create one.'));
 
   // Players
   const playersCard = h('div', { class: 'card' });
@@ -529,8 +683,23 @@ function screenSetup() {
 
 function rerenderSetup() { render(); }
 
+// Create a fresh course from the setup screen, then jump to the editor. The
+// in-progress draft (date + roster) is stashed so returning re-selects the new
+// course — see leaveCourse().
+function createCourseFromSetup() {
+  state.pendingDraft = state.view.draft;
+  const c = { id: uid(), name: '', holesCount: 18, tees: emptyTees(), holes: makeHoles(18, 'std'), updatedAt: Date.now() };
+  state.courses.push(c);
+  save();
+  go({ name: 'course', courseId: c.id, from: 'setup' });
+}
+
 function commitNewRound() {
   const d = state.view.draft;
+  // A round must be backed by a saved course.
+  const c = d.courseId ? state.courses.find(x => x.id === d.courseId) : null;
+  if (!c) { toast('Pick or create a course first'); return; }
+
   // Drop fully-blank rows, then require a handicap for every remaining player.
   const rows = d.players.filter(p => (p.name || '').trim() !== '' || String(p.handicap).trim() !== '');
   if (rows.length === 0) { toast('Add at least one player'); return; }
@@ -547,49 +716,13 @@ function commitNewRound() {
     tee: p.tee || DEFAULT_TEE,
   }));
 
-  // Resolve the course: an explicitly-picked one, else match a typed name,
-  // else create a new saved course from the chosen template (if named).
-  let courseId = d.courseId;
-  const typed = (d.courseName || '').trim();
-  if (!courseId && typed) {
-    const match = state.courses.find(c =>
-      c.holesCount === d.holesCount && c.name.trim().toLowerCase() === typed.toLowerCase());
-    if (match) courseId = match.id;
-  }
-  let holes, courseName = '';
-  if (courseId) {
-    const c = state.courses.find(x => x.id === courseId);
-    holes = c.holes.map(hh => ({ ...hh })); // frozen fallback if the course is later deleted
-    courseName = c.name;
-  } else {
-    holes = makeHoles(d.holesCount, d.preset);
-    if (typed) {
-      const tees = {};
-      TEES.forEach(t => {
-        const src = d.tees[t.key] || {};
-        tees[t.key] = { slope: clampSlope(src.slope) };
-      });
-      const c = {
-        id: uid(), name: typed, holesCount: d.holesCount, tees,
-        holes: holes.map(hh => ({ ...hh })), updatedAt: Date.now(),
-      };
-      state.courses.push(c);
-      courseId = c.id;
-      courseName = c.name;
-    }
-  }
-  const linkedCourse = courseId ? state.courses.find(c => c.id === courseId) : null;
-  const teesSnapshot = linkedCourse
-    ? JSON.parse(JSON.stringify(linkedCourse.tees))
-    : emptyTees();
-
   const round = {
     id: d.id,
     date: d.date,
-    courseId: courseId || null,
-    courseName,
-    holes,
-    tees: teesSnapshot,
+    courseId: c.id,
+    courseName: c.name,
+    holes: c.holes.map(hh => ({ ...hh })),          // frozen fallback if the course is later deleted
+    tees: JSON.parse(JSON.stringify(c.tees || emptyTees())),
     players: named,
     scores: Object.fromEntries(named.map(p => [p.id, {}])),
     currentHole: 1,
@@ -657,35 +790,8 @@ function holeEntry(r) {
     h('button', { class: 'nav', disabled: cur === N, onclick: () => setHole(cur + 1) }, '›'),
   ]));
 
-  // Editable par + stroke index for this hole. Steppers (not text inputs) so
-  // editing is one-tap on mobile and never loses focus. `hole` is the linked
-  // course's own object (via holesFor), so edits persist to the course and
-  // show up on every scorecard for it.
-  function commitHoleMeta() {
-    r.updatedAt = Date.now();
-    const c = roundCourse(r);
-    if (c) c.updatedAt = Date.now();
-    save();
-    go(state.view);
-  }
-  // `kind` ('par' | 'si') drives the colour coding so these course-setup
-  // controls are easy to tell apart from the green player-score steppers.
-  function metaStepper(label, kind, value, dec, inc) {
-    return h('div', { class: 'mini ' + kind }, [
-      h('span', { class: 'mini-lbl' }, label),
-      h('button', { class: 'mini-btn', onclick: dec }, '−'),
-      h('span', { class: 'mini-val' }, String(value)),
-      h('button', { class: 'mini-btn', onclick: inc }, '+'),
-    ]);
-  }
-  box.appendChild(h('div', { class: 'par-edit' }, [
-    metaStepper('Par', 'par', hole.par,
-      () => { hole.par = Math.max(1, hole.par - 1); commitHoleMeta(); },
-      () => { hole.par = hole.par + 1; commitHoleMeta(); }),
-    metaStepper('SI', 'si', hole.si,
-      () => { hole.si = Math.max(1, hole.si - 1); commitHoleMeta(); },
-      () => { hole.si = Math.min(N, hole.si + 1); commitHoleMeta(); }),
-  ]));
+  // Par/SI are set per course (Courses tab), not mid-round — the header above
+  // shows them; scoring reads them live via holesFor().
 
   // One row per player — strokes depend on the slope of that player's tee.
   r.players.forEach(p => {
@@ -831,6 +937,19 @@ function scorecardTable(r) {
   return wrap;
 }
 
+// Leaving the course editor: if we arrived from round setup, return there with
+// this course preselected; otherwise go back to the Courses tab.
+function leaveCourse(courseId) {
+  if (state.view.from === 'setup' && state.pendingDraft) {
+    const draft = state.pendingDraft;
+    state.pendingDraft = null;
+    draft.courseId = courseId;
+    go({ name: 'setup', draft });
+  } else {
+    go({ name: 'home', tab: 'courses' });
+  }
+}
+
 // Course editor — name, hole count, per-tee slope, and per-hole par + SI.
 // Edits write straight to the course (and save), so linked scorecards recompute.
 function screenCourse() {
@@ -857,6 +976,31 @@ function screenCourse() {
         } }, String(n)))),
     ]),
   ]));
+
+  // Info — metadata that came with the course (bundled/imported); read-only.
+  const info = [];
+  if (c.city || c.region) info.push(['Location', [c.city, c.region].filter(Boolean).join(', ')]);
+  if (state.userLoc && c.location) info.push(['Distance', `${haversineKm(state.userLoc, c.location).toFixed(1)} km away`]);
+  if (c.access) info.push(['Access', c.access === 'pay-and-play' ? 'Pay & play' : c.access === 'greenfee' ? 'Greenfee — guests welcome' : 'Members only']);
+  if (c.greenFee && c.greenFee.min != null) {
+    const gf = c.greenFee, range = gf.max && gf.max !== gf.min ? `${gf.min}–${gf.max}` : `${gf.min}`;
+    info.push(['Green fee', `${range} ${gf.currency || 'SEK'}`]);
+  }
+  if (c.maxHcp != null) info.push(['Max handicap', String(c.maxHcp)]);
+  const hasLen = t => c.holes.length && c.holes.every(hh => hh.len && hh.len[t] != null);
+  if (hasLen('yellow') || hasLen('red')) {
+    const tot = t => c.holes.reduce((s, hh) => s + (hh.len?.[t] || 0), 0);
+    info.push(['Length', TEES.filter(t => hasLen(t.key)).map(t => `${t.label} ${tot(t.key)} m`).join(' · ')]);
+  }
+  if (info.length) {
+    content.appendChild(h('div', { class: 'card info-list' }, [
+      h('div', { class: 'section-label' }, 'Info'),
+      ...info.map(([k, v]) => h('div', { class: 'info-row' }, [
+        h('span', { class: 'k' }, k),
+        h('span', { class: 'v' }, v),
+      ])),
+    ]));
+  }
 
   // Slope per tee
   content.appendChild(h('div', { class: 'card' }, [
@@ -902,12 +1046,17 @@ function screenCourse() {
     if (confirm(`Delete course "${c.name || 'Untitled'}"? Rounds already played keep their own copy.`)) {
       state.courses = state.courses.filter(x => x.id !== c.id);
       save();
-      go({ name: 'home', tab: 'courses' });
+      if (state.view.from === 'setup' && state.pendingDraft) {
+        const draft = state.pendingDraft; state.pendingDraft = null; draft.courseId = null;
+        go({ name: 'setup', draft });
+      } else {
+        go({ name: 'home', tab: 'courses' });
+      }
     }
   } }, 'Delete course'));
 
   return h('div', null, [
-    topbar(c.name || 'Course', { back: () => go({ name: 'home', tab: 'courses' }) }),
+    topbar(c.name || 'Course', { back: () => leaveCourse(c.id) }),
     content,
   ]);
 }
