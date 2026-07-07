@@ -15,14 +15,20 @@
 
 const STORE_KEY = 'golf.scorecard.v1';
 
-// Tees a player can play off; each has its own slope on a course.
+// Tees a player can play off; each has its own slope + course rating on a course.
 const TEES = [
   { key: 'yellow', label: 'Yellow', color: '#e0a400' },
   { key: 'red', label: 'Red', color: '#dc2626' },
 ];
 const DEFAULT_TEE = TEES[0].key;
 function teeInfo(key) { return TEES.find(t => t.key === key) || TEES[0]; }
-function emptyTees() { return { yellow: { slope: 113 }, red: { slope: 113 } }; }
+function emptyTees() { return { yellow: { slope: 113, cr: null }, red: { slope: 113, cr: null } }; }
+// Course rating is a decimal (e.g. 22.7); null/blank means "unknown" (skip the CR term).
+function parseCR(v) {
+  if (v == null || String(v).trim() === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
 
 /* ----------------------------- state ----------------------------- */
 
@@ -46,7 +52,10 @@ function migrateState() {
   const legacyTees = (obj) => {
     const y = obj.tees?.yellow?.slope ?? obj.slopes?.yellow ?? obj.slope ?? 113;
     const r = obj.tees?.red?.slope ?? obj.slopes?.red ?? obj.slope ?? 113;
-    return { yellow: { slope: y }, red: { slope: r } };
+    return {
+      yellow: { slope: y, cr: obj.tees?.yellow?.cr ?? null },
+      red: { slope: r, cr: obj.tees?.red?.cr ?? null },
+    };
   };
   state.courses.forEach(c => { if (!c.tees) c.tees = legacyTees(c); });
   state.rounds.forEach(r => {
@@ -91,13 +100,18 @@ function uid() {
 
 /* ----------------------------- scoring ----------------------------- */
 
-// Course handicap = the strokes a player plays off this tee: the handicap index
-// scaled by the tee's slope (113 = neutral), halved for a 9-hole round.
-function courseHandicap(handicapIndex, holesCount, slope) {
+// Course handicap (WHS) = the strokes a player plays off this tee: HI scaled by
+// the tee's slope (113 = neutral, HI halved for 9 holes), plus the (CR - par)
+// term when a course rating is known.  CH = round( HI_used * slope/113 + (CR-par) )
+function courseHandicap(handicapIndex, holesCount, slope, courseRating, par) {
   const hiFull = Number(handicapIndex) || 0;
   const hi = holesCount === 9 ? hiFull / 2 : hiFull;
   const s = Number(slope) || 113;
-  return Math.round(hi * (s / 113));
+  let ch = hi * (s / 113);
+  const cr = parseCR(courseRating);
+  const p = Number(par);
+  if (cr != null && Number.isFinite(p)) ch += cr - p;
+  return Math.round(ch);
 }
 
 // Slope ratings run 55–155; 113 is the neutral value (no adjustment).
@@ -106,8 +120,8 @@ function clampSlope(v) {
   return Number.isFinite(n) ? Math.min(155, Math.max(55, n)) : 113;
 }
 
-function strokesReceived(handicapIndex, si, holesCount, slope) {
-  const ph = courseHandicap(handicapIndex, holesCount, slope);
+function strokesReceived(handicapIndex, si, holesCount, slope, courseRating, par) {
+  const ph = courseHandicap(handicapIndex, holesCount, slope, courseRating, par);
   if (ph <= 0 || !si) return 0;
   const base = Math.floor(ph / holesCount);
   const remainder = ph % holesCount;
@@ -143,28 +157,32 @@ function teesFor(round) {
   const c = roundCourse(round);
   return (c && c.tees) || round.tees || emptyTees();
 }
-// The { slope } a given player plays off, based on their tee.
+// The { slope, cr } a given player plays off, based on their tee.
 function teeDataForPlayer(round, player) {
   const t = teesFor(round);
-  return t[player.tee] || t[DEFAULT_TEE] || { slope: 113 };
+  return t[player.tee] || t[DEFAULT_TEE] || { slope: 113, cr: null };
 }
-// Course handicap for a player on this round (slope of their tee).
+function parFor(round) {
+  return holesFor(round).reduce((s, hh) => s + (Number(hh.par) || 0), 0);
+}
+// Course handicap for a player on this round (slope + CR of their tee).
 function playerCourseHandicap(round, player) {
   const holes = holesFor(round);
-  const { slope } = teeDataForPlayer(round, player);
-  return courseHandicap(player.handicap, holes.length, slope);
+  const { slope, cr } = teeDataForPlayer(round, player);
+  return courseHandicap(player.handicap, holes.length, slope, cr, parFor(round));
 }
 
 function playerTotals(round, player) {
   const holes = holesFor(round);
-  const { slope } = teeDataForPlayer(round, player);
+  const par = parFor(round);
+  const { slope, cr } = teeDataForPlayer(round, player);
   let points = 0, gross = 0, played = 0;
   for (const hole of holes) {
     const g = round.scores[player.id]?.[hole.index];
     if (g == null) continue;
     played++;
     gross += g;
-    const sr = strokesReceived(player.handicap, hole.si, holes.length, slope);
+    const sr = strokesReceived(player.handicap, hole.si, holes.length, slope, cr, par);
     points += holePoints(g, hole.par, sr);
   }
   return { points, gross, played };
@@ -233,7 +251,7 @@ function normalizeImportedCourse(raw) {
   const tees = {};
   TEES.forEach(t => {
     const s = raw.tees?.[t.key]?.slope;
-    tees[t.key] = { slope: (s == null || s === '') ? 113 : clampSlope(s) };
+    tees[t.key] = { slope: (s == null || s === '') ? 113 : clampSlope(s), cr: parseCR(raw.tees?.[t.key]?.cr) };
   });
   const name = (typeof raw.name === 'string' && raw.name.trim()) ? raw.name.trim() : 'Imported course';
   const course = { name, holesCount: N, tees, holes };
@@ -793,12 +811,13 @@ function holeEntry(r) {
   // Par/SI are set per course (Courses tab), not mid-round — the header above
   // shows them; scoring reads them live via holesFor().
 
-  // One row per player — strokes depend on the slope of that player's tee.
+  // One row per player — strokes depend on the slope + CR of that player's tee.
+  const par = parFor(r);
   r.players.forEach(p => {
     const tee = teeInfo(p.tee);
     const td = teeDataForPlayer(r, p);
     const g = r.scores[p.id][cur] ?? null;
-    const sr = strokesReceived(p.handicap, hole.si, N, td.slope);
+    const sr = strokesReceived(p.handicap, hole.si, N, td.slope, td.cr, par);
     const pts = holePoints(g, hole.par, sr);
 
     const valEl = h('div', { class: 'val' + (g == null ? ' blank' : '') }, g == null ? '–' : String(g));
@@ -871,6 +890,7 @@ function refreshLeader(r) {
 function scorecardTable(r) {
   const holes = holesFor(r);
   const N = holes.length;
+  const par = parFor(r);
   const wrap = h('div', { class: 'scroll-x' });
   const tbl = h('table', { class: 'card-tbl' });
 
@@ -898,7 +918,7 @@ function scorecardTable(r) {
     r.players.forEach(p => {
       const g = r.scores[p.id]?.[hole.index];
       const td = teeDataForPlayer(r, p);
-      const sr = strokesReceived(p.handicap, hole.si, N, td.slope);
+      const sr = strokesReceived(p.handicap, hole.si, N, td.slope, td.cr, par);
       const pts = holePoints(g ?? null, hole.par, sr);
       tr.appendChild(h('td', null, g == null
         ? h('span', { class: 'dim' }, '–')
@@ -1002,18 +1022,22 @@ function screenCourse() {
     ]));
   }
 
-  // Slope per tee
+  // Slope + course rating per tee
   content.appendChild(h('div', { class: 'card' }, [
-    h('div', { class: 'section-label' }, 'Slope per tee (55–155, 113 = neutral)'),
+    h('div', { class: 'section-label' }, 'Tee slope (55–155) & course rating'),
     h('div', { class: 'tee-ratings' }, TEES.map(t => {
-      const td = c.tees[t.key] || (c.tees[t.key] = { slope: 113 });
+      const td = c.tees[t.key] || (c.tees[t.key] = { slope: 113, cr: null });
       return h('div', { class: 'tee-rating' }, [
         h('span', { class: 'tee-dot', style: `background:${t.color}` }),
         h('span', { class: 'tee-name' }, t.label),
         h('input', { class: 'sl', type: 'number', inputmode: 'numeric', min: '55', max: '155', placeholder: 'slope',
           value: td.slope ?? 113, oninput: e => { td.slope = clampSlope(e.target.value); touch(); } }),
+        h('input', { class: 'cr', type: 'number', inputmode: 'decimal', step: '0.1', placeholder: 'CR',
+          value: td.cr ?? '', oninput: e => { td.cr = parseCR(e.target.value); touch(); } }),
       ]);
     })),
+    h('div', { class: 'hint', style: 'margin:10px 2px 0' },
+      'Course rating is optional. Leave blank for slope-only; enter it (e.g. 22.7) to match official WHS points.'),
   ]));
 
   // Per-hole par + SI

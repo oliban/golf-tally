@@ -33,18 +33,20 @@ course.
 ```
 HI_used         = HCP           # 18 holes
                 = HCP / 2        # 9 holes
-courseHandicap  = round( HI_used * slope / 113 )
+courseHandicap  = round( HI_used * slope / 113 + (CR - par) )
 strokesOnHole   = floor(ch / holes) + (SI <= (ch mod holes) ? 1 : 0)
 net             = gross - strokesReceived
 points          = max(0, par - net + 2)
 ```
 
-Each **tee** (Yellow, Red) carries its own **slope** (55–155, 113 = neutral) and
-every player is assigned a tee, so two players off different tees get different
-course handicaps. The scorecard shows each player's `HCP → +strokes`.
+This is the **WHS** course-handicap formula. Each **tee** (Yellow, Red) carries
+its own **slope** (55–155, 113 = neutral) and an optional **course rating (CR)**,
+and every player is assigned a tee. Leave CR blank for slope-only; set it to
+match official WHS points (the `(CR − par)` term shifts the handicap for courses
+whose rating differs from par, e.g. an easy par-3 with CR well below par).
 
-Example: a handicap of 36 over 18 holes at slope 113 gives 36 strokes → 2 on
-every hole, so a gross 6 on a par 4 is a net 4 → **2 points**.
+Example: on a 9-hole par-27 course, slope 69, CR 22.7, a handicap of 36 gives
+`round(18 × 69/113 + (22.7 − 27)) = 7` strokes.
 
 ## Run it locally
 
