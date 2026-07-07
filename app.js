@@ -23,10 +23,13 @@ const TEES = [
 const DEFAULT_TEE = TEES[0].key;
 function teeInfo(key) { return TEES.find(t => t.key === key) || TEES[0]; }
 function emptyTees() { return { yellow: { slope: 113, cr: null }, red: { slope: 113, cr: null } }; }
-// Course rating is a decimal (e.g. 22.7); null/blank means "unknown" (skip the CR term).
+// Course rating is a decimal (e.g. 22.7); null/blank means "unknown" (skip the CR
+// term). Accepts a comma decimal separator (e.g. "22,7") as well as a dot.
 function parseCR(v) {
-  if (v == null || String(v).trim() === '') return null;
-  const n = Number(v);
+  if (v == null) return null;
+  const s = String(v).trim().replace(',', '.');
+  if (s === '') return null;
+  const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
 
@@ -1032,7 +1035,7 @@ function screenCourse() {
         h('span', { class: 'tee-name' }, t.label),
         h('input', { class: 'sl', type: 'number', inputmode: 'numeric', min: '55', max: '155', placeholder: 'slope',
           value: td.slope ?? 113, oninput: e => { td.slope = clampSlope(e.target.value); touch(); } }),
-        h('input', { class: 'cr', type: 'number', inputmode: 'decimal', step: '0.1', placeholder: 'CR',
+        h('input', { class: 'cr', type: 'text', inputmode: 'decimal', placeholder: 'CR',
           value: td.cr ?? '', oninput: e => { td.cr = parseCR(e.target.value); touch(); } }),
       ]);
     })),
