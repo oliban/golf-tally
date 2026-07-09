@@ -32,6 +32,15 @@ function parseCR(v) {
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
+// Parse a user-entered decimal number, accepting a comma separator (e.g. a
+// Swedish handicap "36,9"). Returns null for blank/invalid.
+function parseNum(v) {
+  if (v == null) return null;
+  const s = String(v).trim().replace(',', '.');
+  if (s === '') return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
 
 /* ----------------------------- state ----------------------------- */
 
@@ -669,8 +678,8 @@ function screenSetup() {
       h('div', { class: 'player-row' }, [
         h('input', { class: 'name', type: 'text', placeholder: `Player ${i + 1}`, value: p.name,
           oninput: e => { p.name = e.target.value; } }),
-        h('input', { class: 'hcp' + (d.hcpError && String(p.handicap).trim() === '' ? ' invalid' : ''),
-          type: 'number', inputmode: 'numeric', placeholder: 'HCP', value: p.handicap,
+        h('input', { class: 'hcp' + (d.hcpError && parseNum(p.handicap) == null ? ' invalid' : ''),
+          type: 'text', inputmode: 'decimal', placeholder: 'HCP', value: p.handicap,
           oninput: e => { p.handicap = e.target.value; if (d.hcpError) d.hcpError = false; e.target.classList.remove('invalid'); } }),
         d.players.length > 1 ? h('button', { class: 'rm', onclick: () => { d.players.splice(i, 1); rerenderSetup(); } }, '×') : null,
       ]),
@@ -724,7 +733,7 @@ function commitNewRound() {
   // Drop fully-blank rows, then require a handicap for every remaining player.
   const rows = d.players.filter(p => (p.name || '').trim() !== '' || String(p.handicap).trim() !== '');
   if (rows.length === 0) { toast('Add at least one player'); return; }
-  if (rows.some(p => String(p.handicap).trim() === '' || !Number.isFinite(Number(p.handicap)))) {
+  if (rows.some(p => parseNum(p.handicap) == null)) {
     d.hcpError = true;
     rerenderSetup();
     toast('Set a handicap for every player');
@@ -733,7 +742,7 @@ function commitNewRound() {
   const named = rows.map((p, i) => ({
     id: p.id,
     name: (p.name || '').trim() || `Player ${i + 1}`,
-    handicap: Number(p.handicap),
+    handicap: parseNum(p.handicap),
     tee: p.tee || DEFAULT_TEE,
   }));
 
