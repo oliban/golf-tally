@@ -309,6 +309,8 @@ table.card-tbl tr.tot td.hole-col { background: #f2f8f4; }
 .fab-bar .inner { max-width: 720px; margin: 0 auto; }
 
 .hint { font-size: 13px; color: var(--muted); line-height: 1.5; margin: -4px 2px 14px; }
+.cr-warn { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: #fdf1e7;
+  border: 1px solid #f0c9a8; color: #8a4b16; font-size: 13px; line-height: 1.45; font-weight: 600; }
 .dim { color: var(--muted); }
 
 /* ---------- Course-first setup ---------- */

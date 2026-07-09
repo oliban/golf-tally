@@ -1025,7 +1025,24 @@ function screenCourse() {
     ]));
   }
 
-  // Slope + course rating per tee
+  // Slope + course rating per tee, with a live sanity warning.
+  const warnEl = h('div', { class: 'cr-warn', style: 'display:none' });
+  function refreshWarn() {
+    const par = c.holes.reduce((s, hh) => s + (Number(hh.par) || 0), 0);
+    const msgs = [];
+    TEES.forEach(t => {
+      const cr = c.tees[t.key]?.cr;
+      if (cr != null && Math.abs(cr - par) > 8) {
+        msgs.push(`${t.label} course rating ${cr} is far from par ${par} — that looks like a rating for a different number of holes. For ${c.holesCount} holes it should be close to ${par}.`);
+      }
+    });
+    const sis = c.holes.map(hh => hh.si).sort((a, b) => a - b);
+    if (!sis.every((v, i) => v === i + 1)) {
+      msgs.push(`Stroke index should list 1–${c.holes.length} once each — check for duplicates or gaps.`);
+    }
+    if (msgs.length) { warnEl.innerHTML = msgs.map(m => '⚠️ ' + esc(m)).join('<br>'); warnEl.style.display = ''; }
+    else warnEl.style.display = 'none';
+  }
   content.appendChild(h('div', { class: 'card' }, [
     h('div', { class: 'section-label' }, 'Tee slope (55–155) & course rating'),
     h('div', { class: 'tee-ratings' }, TEES.map(t => {
@@ -1036,11 +1053,12 @@ function screenCourse() {
         h('input', { class: 'sl', type: 'number', inputmode: 'numeric', min: '55', max: '155', placeholder: 'slope',
           value: td.slope ?? 113, oninput: e => { td.slope = clampSlope(e.target.value); touch(); } }),
         h('input', { class: 'cr', type: 'text', inputmode: 'decimal', placeholder: 'CR',
-          value: td.cr ?? '', oninput: e => { td.cr = parseCR(e.target.value); touch(); } }),
+          value: td.cr ?? '', oninput: e => { td.cr = parseCR(e.target.value); touch(); refreshWarn(); } }),
       ]);
     })),
     h('div', { class: 'hint', style: 'margin:10px 2px 0' },
-      'Course rating is optional. Leave blank for slope-only; enter it (e.g. 22.7) to match official WHS points.'),
+      'Course rating is optional. Leave blank for slope-only; enter it (e.g. 22.7) to match official WHS points. Use the rating that matches the hole count (a 9-hole CR for 9 holes).'),
+    warnEl,
   ]));
 
   // Per-hole par + SI
@@ -1054,20 +1072,21 @@ function screenCourse() {
     // Par stepper updates its value in place (no full re-render, keeps scroll).
     const parVal = h('span', { class: 'v' }, String(hole.par));
     const parStep = h('div', { class: 'parstep' }, [
-      h('button', { onclick: () => { hole.par = Math.max(1, hole.par - 1); parVal.textContent = String(hole.par); touch(); } }, '−'),
+      h('button', { onclick: () => { hole.par = Math.max(1, hole.par - 1); parVal.textContent = String(hole.par); touch(); refreshWarn(); } }, '−'),
       parVal,
-      h('button', { onclick: () => { hole.par = Math.min(7, hole.par + 1); parVal.textContent = String(hole.par); touch(); } }, '+'),
+      h('button', { onclick: () => { hole.par = Math.min(7, hole.par + 1); parVal.textContent = String(hole.par); touch(); refreshWarn(); } }, '+'),
     ]);
     const siInput = h('input', { class: 'si-input', type: 'number', inputmode: 'numeric', min: '1', max: String(N),
       value: hole.si, oninput: e => {
         let v = parseInt(e.target.value, 10);
-        if (Number.isFinite(v)) { hole.si = Math.min(N, Math.max(1, v)); touch(); }
+        if (Number.isFinite(v)) { hole.si = Math.min(N, Math.max(1, v)); touch(); refreshWarn(); }
       } });
     holesCard.appendChild(h('div', { class: 'hole-edit' }, [
       h('span', { class: 'hno' }, String(hole.index)), parStep, siInput,
     ]));
   });
   content.appendChild(holesCard);
+  refreshWarn();
 
   content.appendChild(h('button', { class: 'btn danger', onclick: () => {
     if (confirm(`Delete course "${c.name || 'Untitled'}"? Rounds already played keep their own copy.`)) {
