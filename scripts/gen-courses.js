@@ -30,7 +30,7 @@ let errors = 0;
 const seen = new Set();
 for (const c of courses) {
   const n = Array.isArray(c.holes) ? c.holes.length : 0;
-  if (n !== 9 && n !== 18) { console.error(`✗ ${c.name}: ${n} holes (need 9 or 18)`); errors++; continue; }
+  if (n !== 9 && n !== 12 && n !== 18) { console.error(`✗ ${c.name}: ${n} holes (need 9, 12 or 18)`); errors++; continue; }
   const sis = c.holes.map(h => h.si).sort((a, b) => a - b);
   if (!sis.every((v, i) => v === i + 1)) { console.error(`✗ ${c.name}: stroke index is not a 1..${n} permutation`); errors++; }
   const key = (c.name || '').toLowerCase() + '|' + n;

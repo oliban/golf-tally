@@ -112,12 +112,14 @@ function uid() {
 
 /* ----------------------------- scoring ----------------------------- */
 
-// Course handicap (WHS) = the strokes a player plays off this tee: HI scaled by
-// the tee's slope (113 = neutral, HI halved for 9 holes), plus the (CR - par)
-// term when a course rating is known.  CH = round( HI_used * slope/113 + (CR-par) )
+// Course handicap (WHS) = the strokes a player plays off this tee: the handicap
+// index scaled to the holes played (HI × holes/18, so 9→½, 12→⅔, 18→full) and
+// the tee's slope (113 = neutral), plus the (CR - par) term when a course rating
+// is known.  CH = round( HI × holes/18 × slope/113 + (CR - par) )
 function courseHandicap(handicapIndex, holesCount, slope, courseRating, par) {
   const hiFull = Number(handicapIndex) || 0;
-  const hi = holesCount === 9 ? hiFull / 2 : hiFull;
+  const holes = Number(holesCount) || 18;
+  const hi = hiFull * (holes / 18);
   const s = Number(slope) || 113;
   let ch = hi * (s / 113);
   const cr = parseCR(courseRating);
@@ -1001,7 +1003,7 @@ function screenCourse() {
     ]),
     h('label', { class: 'field', style: 'margin-bottom:0' }, [
       h('span', { class: 'lbl' }, 'Holes'),
-      h('div', { class: 'seg' }, [9, 18].map(n =>
+      h('div', { class: 'seg' }, [9, 12, 18].map(n =>
         h('button', { class: c.holesCount === n ? 'on' : '', onclick: () => {
           if (c.holesCount === n) return;
           c.holesCount = n; c.holes = resizeHoles(c.holes, n); touch(); render();
