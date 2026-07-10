@@ -362,5 +362,27 @@
       { "index": 17, "par": 3, "si": 9, "len": { "yellow": 163, "red": 139 } },
       { "index": 18, "par": 4, "si": 5, "len": { "yellow": 367, "red": 322 } }
     ]
+  },
+  {
+    "name": "Gullbringa Pay & Play",
+    "holesCount": 9,
+    "region": "Västra Götaland",
+    "city": "Kungälv",
+    "access": "pay-and-play",
+    "tees": {
+      "yellow": { "slope": 98, "cr": 30.25 },
+      "red": { "slope": 95, "cr": 29.7 }
+    },
+    "holes": [
+      { "index": 1, "par": 3, "si": 9, "len": { "yellow": 96, "red": 96 } },
+      { "index": 2, "par": 3, "si": 8, "len": { "yellow": 107, "red": 107 } },
+      { "index": 3, "par": 3, "si": 2, "len": { "yellow": 183, "red": 150 } },
+      { "index": 4, "par": 4, "si": 6, "len": { "yellow": 261, "red": 207 } },
+      { "index": 5, "par": 4, "si": 1, "len": { "yellow": 326, "red": 275 } },
+      { "index": 6, "par": 3, "si": 3, "len": { "yellow": 146, "red": 146 } },
+      { "index": 7, "par": 3, "si": 7, "len": { "yellow": 134, "red": 134 } },
+      { "index": 8, "par": 4, "si": 5, "len": { "yellow": 202, "red": 176 } },
+      { "index": 9, "par": 4, "si": 4, "len": { "yellow": 287, "red": 263 } }
+    ]
   }
 ]
