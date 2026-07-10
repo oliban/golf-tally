@@ -241,11 +241,11 @@ function resizeHoles(holes, n) {
 // shape. Lenient: blank/invalid fields fall back to sensible defaults, slope
 // defaults to 113 (neutral). Optional location/access/city/region/greenFee/
 // maxHcp and per-hole length pass through for the course list and filters.
-// Returns null when the object has no usable 9- or 18-hole layout.
+// Returns null when the object has no usable 9-, 12- or 18-hole layout.
 function normalizeImportedCourse(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const src = Array.isArray(raw.holes) ? raw.holes : null;
-  if (!src || (src.length !== 9 && src.length !== 18)) return null;
+  if (!src || (src.length !== 9 && src.length !== 12 && src.length !== 18)) return null;
   const N = src.length;
   const holes = [];
   for (let i = 1; i <= N; i++) {
