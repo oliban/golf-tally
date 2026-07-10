@@ -2187,16 +2187,18 @@ globalThis.BUNDLED_COURSES = [
   },
   {
     "name": "Gullbringa Pay & Play",
-    "holesCount": 12,
+    "holesCount": 9,
     "region": "Västra Götaland",
     "city": "Kungälv",
     "access": "pay-and-play",
     "tees": {
       "yellow": {
-        "slope": 98
+        "slope": 98,
+        "cr": 30.25
       },
       "red": {
-        "slope": 95
+        "slope": 95,
+        "cr": 29.7
       }
     },
     "holes": [
@@ -2279,33 +2281,6 @@ globalThis.BUNDLED_COURSES = [
         "len": {
           "yellow": 287,
           "red": 263
-        }
-      },
-      {
-        "index": 10,
-        "par": 3,
-        "si": 10,
-        "len": {
-          "yellow": 96,
-          "red": 96
-        }
-      },
-      {
-        "index": 11,
-        "par": 3,
-        "si": 11,
-        "len": {
-          "yellow": 107,
-          "red": 107
-        }
-      },
-      {
-        "index": 12,
-        "par": 3,
-        "si": 12,
-        "len": {
-          "yellow": 183,
-          "red": 150
         }
       }
     ]
